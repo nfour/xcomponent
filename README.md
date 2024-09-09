@@ -177,6 +177,8 @@ export class MyComponentState {
   get combinedNumber() {
     return this.count.value + this.props.value.someProp
   }
+
+  increment = () => this.count.set(this.count.value + 1)
 }
 ```
 - ./MyComponent.tsx
@@ -195,7 +197,7 @@ export const MyComponent = X<MyComponentProps>((props) => {
     <div>{props.someProp}</div>
     <div>{state.count.value}</div>
     <div>{state.combinedNumber}</div>
-    <button onClick={() => state.count.set(state.count.value +1)}>Incr</button>
+    <button onClick={state.increment}>Incr</button>
   </>
 })
 
