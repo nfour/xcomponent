@@ -17,16 +17,10 @@ This micro frameworks exists to define a convention while being simple enough to
 ### Drop in replacement for `observer`
 
 ```tsx
-//
-// BEFORE:
-//
 import { observer } from 'mobx-react-lite'
 
 const MyComponent = observer<{ someProp: number }>((props) => <>{props.someProp}</>)
 
-//
-// AFTER:
-//
 import { X } from '@n4s/xcomponent'
 
 const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
@@ -114,7 +108,48 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-## Move class state wherever you need it
+## Details of the API
+
+You can use a class based styled (a convention), or a functional style.
+
+```tsx
+
+// Functional style
+export const MyStateFn = () => {
+  const count = new X.Value(0)
+  const increment = () => count.set(count.value + 1)
+
+  return { count, increment }
+}
+
+// Class style
+export class MyStateClass {
+  count = new X.Value(0)
+
+  increment = () => this.count.set(this.count.value + 1)
+}
+
+// and both inside a component, inline:
+export const MyComponent = X(() => {
+  // Functional
+  const state = X.useState(() => {
+    const count = new X.Value(0)
+    const increment = () => count.set(count.value + 1)
+
+    return { count, increment }
+  })
+
+  // Class
+  const state2 = X.useState(() => class {
+    count = new X.Value(0)
+    increment = () => this.count.set(this.count.value + 1)
+  })
+
+  return <></>
+})
+```
+
+## State should be decoupled from the component
 
 State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
 
@@ -158,7 +193,7 @@ export const MyComponent = X<MyComponentProps>((props) => {
 ```
 
 
-### Enhanced composition pattern
+### Component composition extender
 
 ```tsx
 //
@@ -167,14 +202,8 @@ export const MyComponent = X<MyComponentProps>((props) => {
 
 import { observer } from 'mobx-react-lite'
 
-const Dialog = observer<{ children: ReactNode }>((props) =>
-  <> {props.children} </>
-)
-
-const DialogHead = observer<{ children: ReactNode }>((props) =>
-  <h2>{props.children}</h2>
-)
-
+const Dialog = observer<{ children: ReactNode }>((props) => <> {props.children} </> )
+const DialogHead = observer<{ children: ReactNode }>((props) => <h2>{props.children}</h2> )
 const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
 
 //
@@ -183,40 +212,55 @@ const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
 
 import { X } from '@n4s/xcomponent'
 
-const Dialog = X((props) =>
-  <>{props.children}</>
-)
-.with({
-  Head: X((props) =>
-    <h2 className={Dialog.classes.head}>{props.children}</h2>
-  ),
+const DialogBody = X((props) => <h2 className={Dialog.classes.head}>{props.children}</h2> )
 
-  // Can provide any static property, such as surfacing public classnames to override styles with.
-  classes: {
-    head: 'dialog-head',
-  }
-})
+const Dialog = X((props) => <>{props.children}</> )
+  .with({
+    // Inline component
+    Head: X((props) => <h2 className={Dialog.classes.head}>{props.children}</h2> ),
+    // Referenced
+    Body: DialogBody,
 
-const Example = () => <Dialog><Dialog.Head>Title</Dialog.Head>Content</Dialog>
+    // Lets add some class names to make it easier to style externally
+    classes: {
+      head: 'dialog-head',
+    }
+  })
+
+const Example = () =>
+  <Dialog>
+    <Dialog.Head>Title</Dialog.Head>
+    <Dialog.Body>Content</Dialog.Body>  
+  </Dialog>
 ```
-
-
 
 ## Conventions / Philosophy
 
-### Use `class` syntax for all state
+### Use either `class` or `function` syntax consistently for all state
 
-Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state in Typescript.
+Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state.
 
-Local and global state each use the same class structure, which makes it easy to refactor state into different locations.
+However, functional components are more ergonomic for simple state, and are more concise.
 
-Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection.
+Ideally you should choose one pattern and roll with it throughout the project. I personally find classes easier to construct trees with, handle dependency injection etc.
 
-### Compositional root toolbox for your project
+Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection. The key issue people find with classes is that it can become easy to overload them with too many responsibilities, which is why we should observer the SOLID principles and keep them single responsibility.
 
-I'm still pondering this convention, but I posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a project.
+We can compose classes as a tree, with many classes within them as needed.
 
-It could be encouraged to re-export your own `X` function/namespace. We would need to avoid  any expensive or cyclic dependencies, so stick to dependency-less, simple tools, like some examples below:
+Functional code can also suffer from the same issues, however the syntax is arguably less involved. Mobx functional code does potentially require more boilerplate, as you must annotate methods with `action` and `observable` etc. where as classes can be made "auto observable", and we can then learn the semantics of that pattern as a team.
+
+### As a compositional root toolbox for your project
+
+I posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a project.
+
+You would re-export your own `X`. You would need to avoid any expensive dependencies.
+
+This pattern would then serve to bring together consistency within a project - there is something to be said for auto-discovery where one doesn't have to sift through a sea of tsconfig path aliases, components & utilitie dumping folders etc.
+
+Only the most battle hardened, necessary tools should appear in your projects `X` root.
+
+A good rule of thumb would be to analyze a project and find the patterns that are heavily repeated, that which an abstraction would actually benefit from.
 
 - ./src/X.ts
 ```tsx
