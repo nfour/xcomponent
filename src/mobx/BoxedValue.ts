@@ -5,7 +5,7 @@ import { makeObservable } from 'mobx';
  *
  * @example
  *
- * const somethingFromUri = new Boxed(
+ * const somethingFromUri = new BoxedValue(
  *   () => uriRoutes.someRoute.search.something,
  *   (newValue) => uriRoutes.someRoute.push((uri) => ({ search: { something: newValue } })),
  * )
@@ -16,14 +16,14 @@ import { makeObservable } from 'mobx';
  *
  * @example
  *
- * const somethingWrappedToOptimizeObservability = new Boxed(
+ * const somethingWrappedToOptimizeObservability = new BoxedValue(
  *   () => this.something,
  * )
  *
  * somethingWrappedToOptimizeObservability.value // 'something'
  * somethingWrappedToOptimizeObservability.set('foo') // does nothing
  */
-export class Boxed<GET extends unknown, SET extends GET = GET> {
+export class BoxedValue<GET extends unknown, SET extends GET = GET> {
   constructor(
     public getter: () => GET,
     public set: (value: SET) => any = () => void 0,
@@ -39,3 +39,5 @@ export class Boxed<GET extends unknown, SET extends GET = GET> {
     return this.getter();
   }
 }
+
+export { BoxedValue as Boxed };

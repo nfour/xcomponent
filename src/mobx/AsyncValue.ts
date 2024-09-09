@@ -13,7 +13,7 @@ type MaybeCancellablePromise<T> = Promise<T> & {
 };
 
 /**
- * A simple way to encapsulate API access.
+ * A simple way to encapsulate async value access.
  *
  * Read the example closely:
  *

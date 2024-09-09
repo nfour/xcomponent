@@ -107,6 +107,8 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
 
     setCount = (value: number) => this.count = value
     setSomeProp = (value: number) => this.someProp = value
+
+    increment = () => this.setCount(this.count + 1)
     
   })())
 
@@ -127,7 +129,7 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
     <div>{props.someProp}</div>
     <div>{state.count}</div>
     <div>{state.combinedNumber}</div>
-    <button onClick={() => state.setCount(state.count +1)}>Incr</button>
+    <button onClick={state.increment}>Incr</button>
   </>
 })
 
@@ -139,12 +141,14 @@ import { X } from '@n4s/xcomponent'
 
 export const MyComponent = X<{ someProp: number }>((props) => {
   const state = X.useState(() => class {
+    props = new X.Value(props) // initialized with `props` only for type inferrence
     count = new X.Value(0)
-    props = new X.Value(props)
 
     get combinedNumber() {
       return this.count.value + this.props.value.someProp
     }
+
+    increment = () => this.count.set(this.count.value + 1)
   })
 
   X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
@@ -155,7 +159,7 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     <div>{props.someProp}</div>
     <div>{state.count.value}</div>
     <div>{state.combinedNumber}</div>
-    <button onClick={() => state.count.set(state.count.value +1)}>Incr</button>
+    <button onClick={state.increment}>Incr</button>
   </>
 })
 ```
@@ -166,7 +170,7 @@ State should be decoupled completely from the component so that it may be reason
 
 In this example the state lives in another file, and the component is just a view into that state.
 
-- ./MyComponentState.ts
+- ./src/MyComponentState.ts
 ```tsx
 import { X } from '@n4s/xcomponent'
 
@@ -181,7 +185,7 @@ export class MyComponentState {
   increment = () => this.count.set(this.count.value + 1)
 }
 ```
-- ./MyComponent.tsx
+- ./src/MyComponent.tsx
 ```tsx
 import { X } from '@n4s/xcomponent'
 import { MyComponentState } from './MyComponentState'
@@ -207,9 +211,8 @@ export const MyComponent = X<MyComponentProps>((props) => {
 
 It is encouraged to re-export your own `X` function/namespace, using `X.extend({})`, to provide any additional tools across your project.
 
+- ./src/X.ts
 ```tsx
-// FILE: src/X.ts
-
 // The idea is to put everything in here related to the general tools needed to work within your project
 // WARNING: Avoid expensive imports, stick to small generic tools that are frequently imported, this will keep things working fast and help avoid cyclic dependencies.
 
@@ -231,8 +234,8 @@ export const X = XComponent.extend({ dayjs, useRootState, SomeValueModel });
 
 then
 
+- ./src/MyComponent.tsx
 ```tsx
-// FILE: ./MyComponent.tsx
 import { X } from '@/X'; // Or however you would like to import
 
 const MyComponent = X<{ someProp: number }>((props) => {
@@ -253,7 +256,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-## Conventions / Phylosophy
+## Conventions / Philosophy
 
 ### Use `class` syntax for all state
 
@@ -296,3 +299,117 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
   - `useReducer`
   - `useMemo` maybe?
   - etc.
+
+## Helper models
+
+### Value
+
+The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
+
+Features:
+- Type inferrence
+- Async mobx actions (no need to wrap in `runInAction` or use `flow` generators)
+- Terseness
+- Avoids reading `value` until necessary during prop-passing
+- Supports two way binding patterns
+
+```tsx
+const selectedFruit = new Value<'banana'|'apple'|undefined>(undefined)
+selectedFruit.set('test') // TS error
+selectedFruit.set('banana') // Valid
+selectedFruit.value // 'banana'
+```
+
+### AsyncValue
+
+Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
+
+
+Features:
+- Ergonomic types
+- Async mobx actions
+- Queuing
+- Promise cancellation
+- Pending state
+- Error state
+- Success state
+- Progress state (eg. for uploads)
+
+```tsx
+async function fetchFiles(c: { userId: string; foo: number }): Promise<{ name: string }[]> {
+  return []
+}
+
+class ExampleModel {
+  constructor() { makeAutoObservable(this) }
+  activeUserId = '22'
+  files = new AsyncValue(async ({ foo }: { foo: number }) =>
+    fetchFiles({ userId: this.activeUserId, foo })
+  )
+}
+
+const example = new ExampleModel()
+example.files.value?.[0]?.name // undefined - missing data
+await example.files.query({ foo: 22 }) // foo is strongly typed, inferred!
+example.files.value?.[0]?.name // 'myFile.txt' - has data!
+example.files.error // undefined - no error
+example.files.isPending // false - we already awaited it
+
+const v = new AsyncValue(() => fetchUsersList())
+await v.query() // Don't need to provide params as none are defined
+v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
+```
+
+
+### BoxedValue
+
+Very similar to `Value`, however, allows for the getter and setter to be defined seperately, and additionally encapsulates the observable value inside the closure.
+
+```tsx
+
+const blah = { something: 'banana' }
+
+const somethingFromUri = new BoxedValue(
+  () => uriRoutes.someRoute.search.something,
+  (newValue) => uriRoutes.someRoute.push((uri) => ({ search: { something: newValue } })),
+)
+
+somethingFromUri.value // 'foo'
+somethingFromUri.set('bar')
+somethingFromUri.value // 'bar'
+
+// Here we omit the setter, so the value is read-only
+// This is effectively just a container encapsulating the value
+const somethingWrappedToOptimizeObservability = new BoxedValue(
+  () => blah.something,
+)
+
+somethingWrappedToOptimizeObservability.value // 'banana'
+somethingWrappedToOptimizeObservability.set('banana') // does nothing, as not setter was provided
+  
+```
+
+### BoolValue
+
+A `Value` that is specifically for boolean values. It has a few additional methods to make working with booleans easier.
+
+```tsx
+
+const isOpen = new BoolValue(true)
+
+isOpen.toggle() // false
+isOpen.toggle() // true
+isOpen.setFalse()
+isOpen.isTrue // false
+isOpen.setTrue()
+isOpen.isTrue // true
+
+const Example = X(() => 
+  <>
+    <button onClick={isOpen.toggle}>Open</button>
+    <Dialog onClose={isOpen.setFalse}>...</Dialog>
+  </>
+)
+```
+
+
