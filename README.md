@@ -32,48 +32,6 @@ import { X } from '@n4s/xcomponent'
 const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
 ```
 
-### Enhanced composition pattern
-
-```tsx
-//
-// BEFORE:
-//
-
-import { observer } from 'mobx-react-lite'
-
-const Dialog = observer<{ children: ReactNode }>((props) =>
-  <> {props.children} </>
-)
-
-const DialogHead = observer<{ children: ReactNode }>((props) =>
-  <h2>{props.children}</h2>
-)
-
-const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
-
-//
-// AFTER:
-//
-
-import { X } from '@n4s/xcomponent'
-
-const Dialog = X((props) =>
-  <>{props.children}</>
-)
-.with({
-  Head: X((props) =>
-    <h2 className={Dialog.classes.head}>{props.children}</h2>
-  ),
-
-  // Can provide any static property, such as surfacing public classnames to override styles with.
-  classes: {
-    head: 'dialog-head',
-  }
-})
-
-const Example = () => <Dialog><Dialog.Head>Title</Dialog.Head>Content</Dialog>
-```
-
 ### Full example comparison
 
 ```tsx
@@ -198,6 +156,50 @@ export const MyComponent = X<MyComponentProps>((props) => {
 })
 
 ```
+
+
+### Enhanced composition pattern
+
+```tsx
+//
+// BEFORE:
+//
+
+import { observer } from 'mobx-react-lite'
+
+const Dialog = observer<{ children: ReactNode }>((props) =>
+  <> {props.children} </>
+)
+
+const DialogHead = observer<{ children: ReactNode }>((props) =>
+  <h2>{props.children}</h2>
+)
+
+const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
+
+//
+// AFTER:
+//
+
+import { X } from '@n4s/xcomponent'
+
+const Dialog = X((props) =>
+  <>{props.children}</>
+)
+.with({
+  Head: X((props) =>
+    <h2 className={Dialog.classes.head}>{props.children}</h2>
+  ),
+
+  // Can provide any static property, such as surfacing public classnames to override styles with.
+  classes: {
+    head: 'dialog-head',
+  }
+})
+
+const Example = () => <Dialog><Dialog.Head>Title</Dialog.Head>Content</Dialog>
+```
+
 
 
 ## Conventions / Philosophy
