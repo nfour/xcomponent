@@ -273,7 +273,7 @@ A good rule of thumb would be to analyze a project and find the patterns that ar
 // Your compositional root for `X`
 import { X as XComponent } from '@n4s/XComponent';
 import { useRootState } from './RootState'; // Your custom hook
-import { SomeValueModel } from './models/SomeValueModel'; // Your custom class
+import { SomeDateRelatedModel } from './models/SomeDateRelatedModel'; // Your custom class
 
 import dayjs from 'dayjs';
 import timezonePlugin from 'dayjs/plugin/timezone';
@@ -284,7 +284,7 @@ dayjs.extend(timezonePlugin);
 dayjs.extend(utcPlugin);
 dayjs.extend(isBetween);
 
-export const X = XComponent.extend({ dayjs, useRootState, SomeValueModel });
+export const X = XComponent.extend({ dayjs, useRootState, SomeDateRelatedModel });
 ```
 
 then
@@ -297,7 +297,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
   const { api } = X.useRootState();
 
   const state = X.useState(() => class {
-    val = new X.SomeValueModel()
+    date = new X.SomeDateRelatedModel()
 
     orders = new X.AsyncValue(async ({ from, to }: { from: Date, to: Date}) =>
       api.stocks.fetch(`/orders?from=${from.getTime()}&to=${to.getTime()}`)
@@ -308,8 +308,18 @@ const MyComponent = X<{ someProp: number }>((props) => {
     }
   })
 
-  // ...
+  // lets imagine we want to automatically fetch data
+  // whenever the selected date range changes
+  X.useReaction(
+    () => state.date.value,
+    () => state.orders.query(state.date.value),
+    { delay: 1000 }
+  )
+
+  // ... blah blah ...
+
   return <div css={{ color: 'red' }}>
+  {/* ... do something here related to setting dates ... */}
     {state.orders.isPending && 'Loading...'}
     {state.orders.error && <>{state.orders.error.message}</>}
     {state.orders.value?.map(({ user, time }) => <div>{time} {user.name}</div>)}
