@@ -1,7 +1,7 @@
 {
-  "name": "@n4s/xcomponent",
+  "name": "xcomponent",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "scripts": {
     "dev": "ladle dev",
     "build": "pnpm build:clean; pnpm build:cjs; pnpm build:mjs;",
