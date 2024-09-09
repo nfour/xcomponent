@@ -36,6 +36,7 @@ const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
 import { observer } from 'mobx-react-lite'
 import React from 'react'
 
+// Standard mobx component with some inline class state
 export const MyComponent = observer<{ someProp: number }>((props) => {
   const [state] = React.useState(() => new (class {
     constructor() {
@@ -51,7 +52,6 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
 
     setCount = (value: number) => this.count = value
     setSomeProp = (value: number) => this.someProp = value
-
     increment = () => this.setCount(this.count + 1)
     
   })())
