@@ -17,36 +17,6 @@ So we use an observable solution like mobx. It solves the performance problems, 
 
 This library exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
 
-## Conventions
-
-### Use `class` syntax for all state
-
-Mobx and classes go very well together, and classes are a great structure to represent the imperative nature of state. 
-
-Local and global state each use the same class structure, which makes it easy to refactor state around.
-
-### Use `X` as a namespace for all component and state primitives
-
-A convenient singleton to compose all general component & state patterns in your project. Think of it like a toolbelt.
-
-### Dismiss unecessary React hooks
-
-- Good:
-  - `useEffect`
-    - X Alternatives:
-      -  `useOnMounted`
-      -  `useOnUnmounted`
-      -  `useProps`
-      -  `useReaction`
-  - `useLayoutEffect`
-  - `useRef`
-- Unecessary:
-  - `useCallback`
-  - `useState`
-  - `useReducer`
-  - `useMemo` maybe?
-  - etc.
-
 ## How does it compare?
 
 The library provides ways to solve boilerplate and inconsistency issues that arise when using mobx with react, while being fairly intuitive & minimal for those familiar with mobx in react.
@@ -266,3 +236,34 @@ const MyComponent = X<{ someProp: number }>((props) => {
   </div>
 })
 ```
+
+
+## Conventions
+
+### Use `class` syntax for all state
+
+Mobx and classes go very well together, and classes are a great structure to represent the imperative nature of state. 
+
+Local and global state each use the same class structure, which makes it easy to refactor state around.
+
+### Use `X` as a namespace for all component and state primitives
+
+A convenient singleton to compose all general component & state patterns in your project. Think of it like a toolbelt.
+
+### Dismiss unecessary React hooks
+
+- Good:
+  - `useEffect`
+    - X Alternatives:
+      -  `useOnMounted`
+      -  `useOnUnmounted`
+      -  `useProps`
+      -  `useReaction`
+  - `useLayoutEffect`
+  - `useRef`
+- Unecessary:
+  - `useCallback`
+  - `useState`
+  - `useReducer`
+  - `useMemo` maybe?
+  - etc.
