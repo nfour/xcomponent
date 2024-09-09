@@ -250,7 +250,7 @@ However, functional components are more ergonomic for simple state, and are more
 
 Ideally you should choose one pattern and roll with it throughout the project. I personally find classes easier to construct trees with, handle dependency injection etc.
 
-Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection. The key issue people find with classes is that it can become easy to overload them with too many responsibilities, which is why we should observer the SOLID principles and keep them single responsibility.
+Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection. The key issue people find with classes is that it can become easy to overload them with too many responsibilities, which is why we should take note of the single responsibility principal.
 
 We can compose classes as a tree, with many classes within them as needed.
 
