@@ -1,5 +1,4 @@
 import { makeObservable, action, computed } from 'mobx';
-import { Value } from './Value';
 
 /**
  * @see Value
@@ -15,16 +14,16 @@ import { Value } from './Value';
  * isActive.setFalse()
  * isActive.isFalse // true
  */
-export class BoolValue extends Value<boolean> {
+export class BoolValue {
   constructor(public value = false) {
-    super(value);
-
     makeObservable(this, {
       isFalse: computed,
       isTrue: computed,
       setFalse: action.bound,
       setTrue: action.bound,
       toggle: action.bound,
+      value: true,
+      set: action.bound,
     });
   }
 
@@ -46,6 +45,10 @@ export class BoolValue extends Value<boolean> {
 
   setTrue() {
     this.value = true;
+  }
+
+  set(state: this['value']) {
+    this.value = state;
   }
 }
 
