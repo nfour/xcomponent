@@ -217,7 +217,7 @@ const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
 
 import { X } from '@n4s/xcomponent'
 
-const DialogBody = X((props) => <h2 className={Dialog.classes.head}>{props.children}</h2> )
+const DialogBody = X((props) => <h2 className={Dialog.classes.body}>{props.children}</h2> )
 
 const Dialog = X((props) => <>{props.children}</> )
   .with({
@@ -228,7 +228,8 @@ const Dialog = X((props) => <>{props.children}</> )
 
     // Lets add some class names to make it easier to style externally
     classes: {
-      head: 'dialog-head',
+      head: 'my-fancy-dialog-head',
+      body: 'my-fancy-dialog-body',
     }
   })
 
