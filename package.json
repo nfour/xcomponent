@@ -18,6 +18,9 @@
       "require": "./x/cjs/index.js"
     }
   },
+  "files": [
+    "x/*"
+  ],
   "devDependencies": {
     "@ladle/react": "^4.1.1",
     "@types/node": "^22.5.4",
