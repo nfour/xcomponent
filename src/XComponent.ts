@@ -126,7 +126,7 @@ xcomponent.AsyncValue = AsyncValue;
 xcomponent.BoolValue = BoolValue;
 xcomponent.Boxed = Boxed;
 
-xcomponent.extend = <P extends object>(members: P) =>
+xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);
 
 export { xcomponent as X, xcomponent as default, xcomponent as component };
