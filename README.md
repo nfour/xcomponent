@@ -1,26 +1,18 @@
 # XComponent
 
-This is a small wrapper around `react-mobx-lite` to provide a more ergonomic API, which resembles the state lifecycle of `vue.js`
-
-The focus is on:
-- Conventions
-- Ergonomics
-- Consistency
-- Mobx observability
-- React ecosystem
+This is a micro framework that brings together MobX and React in order to solve performance, boilerplate and lifecycle issues with React.
 
 ## Why
 
-React's ecosystem is a great place to be, so we do not want to leave it for `vue` or `svelte` just because of how annoying `hooks`, state management and render performance can be.
+React's ecosystem is a great place to be, so we do not want to leave it just because of how annoying `hooks`, state management and render performance tweaking is.
 
-So we use an observable solution like mobx. It solves the performance problems, but it also adds boilerplate and doesn't quite match React's flow. There is no "correct" convention either, so your team is left to "figure it out".
+So we use an observable solution, like mobx.
 
-This library exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
+It solves the performance problems, but it also adds boilerplate but isn't quite interoperable with React state & props. There is no "correct" convention either, so your team is left to "figure it out" on each new project.
+
+This micro frameworks exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
 
 ## How does it compare?
-
-The library provides ways to solve boilerplate and inconsistency issues that arise when using mobx with react, while being fairly intuitive & minimal for those familiar with mobx in react.
-
 
 ### Drop in replacement for `observer`
 
@@ -207,15 +199,26 @@ export const MyComponent = X<MyComponentProps>((props) => {
 
 ```
 
-## Expected application usage
 
-It is encouraged to re-export your own `X` function/namespace, using `X.extend({})`, to provide any additional tools across your project.
+## Conventions / Philosophy
+
+### Use `class` syntax for all state
+
+Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state in Typescript.
+
+Local and global state each use the same class structure, which makes it easy to refactor state into different locations.
+
+Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection.
+
+### Compositional root toolbox for your project
+
+I'm still pondering this convention, but I posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a project.
+
+It could be encouraged to re-export your own `X` function/namespace. We would need to avoid  any expensive or cyclic dependencies, so stick to dependency-less, simple tools, like some examples below:
 
 - ./src/X.ts
 ```tsx
-// The idea is to put everything in here related to the general tools needed to work within your project
-// WARNING: Avoid expensive imports, stick to small generic tools that are frequently imported, this will keep things working fast and help avoid cyclic dependencies.
-
+// Your compositional root for `X`
 import { X as XComponent } from '@n4s/XComponent';
 import { useRootState } from './RootState'; // Your custom hook
 import { SomeValueModel } from './models/SomeValueModel'; // Your custom class
@@ -256,29 +259,6 @@ const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-## Conventions / Philosophy
-
-### Use `class` syntax for all state
-
-Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state in Typescript.
-
-Local and global state each use the same class structure, which makes it easy to refactor state into different locations.
-
-Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection.
-
-### Use `X` as a namespace for all generic component and state primitives
-
-The idea is that `X` is a namespace for all the tools you need to work with state and view. This should be customized for each project. It should be a small set of tools that are frequently used across the project and which have no meaningful cost to import everywhere.
-
-Examples:
-- Hooks
-- Utilities
-- Primitives
-- Simple structural components (X.Col, X.Row, X.Grid etc.)
-  - Should not have dependencies on other components or large libraries
-  - Avoid `X.Button`, `X.DateSelector`, `X.Select` etc. as these are too specific and should be in a component library, as they would likely include dependencies and significant runtime cost.
-
-The goal is not to have a large library of components, but to have a small set of tools that are frequently used and which can be easily reviewed and understood by the team through a single compositional root where `X` is composed.
 
 ### Dismiss unecessary React hooks
 
