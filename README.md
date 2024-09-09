@@ -252,9 +252,9 @@ Ideally you should choose one pattern and roll with it throughout the project. I
 
 Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection. The key issue people find with classes is that it can become easy to overload them with too many responsibilities, which is why we should take note of the single responsibility principal.
 
-We can compose classes as a tree, with many classes within them as needed.
+We can compose classes as a tree, with many classes within them as needed, recursively.
 
-Functional code can also suffer from the same issues, however the syntax is arguably less involved. Mobx functional code does potentially require more boilerplate, as you must annotate methods with `action` and `observable` etc. where as classes can be made "auto observable", and we can then learn the semantics of that pattern as a team.
+Functional code can also suffer from the same issues, but it is easier to refactor and move around. That flexibility can be a double edged sword, which is why I prefer classes for state - methods, computed values, and actions are all in one place with the consistent syntax throughout.
 
 ### As a compositional root toolbox for your project
 
