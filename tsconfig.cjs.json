@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "CommonJS",
+    "outDir": "./x/cjs",
+    "jsx": "react-jsx",
+    "jsxImportSource": null
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/stories/**"
+  ]
+}

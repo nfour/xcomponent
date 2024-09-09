@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2020",
+    "outDir": "./x/mjs",
+    "jsx": "react-jsx",
+    "jsxImportSource": null
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/stories/**"
+  ]
+}

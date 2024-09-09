@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "ES2022",
+    "target": "ES2022",
+    "outDir": "./x",
+    "declaration": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+}

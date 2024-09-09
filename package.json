@@ -1,0 +1,43 @@
+{
+  "name": "@n4s/xcomponent",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "ladle dev -p 9005 ",
+    "build": "pnpm build:clean; pnpm build:cjs; pnpm build:mjs;",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:mjs": "tsc -p tsconfig.mjs.json",
+    "build:clean": "rm -rf ./x/*"
+  },
+  "main": "./x/cjs/index.js",
+  "module": "./x/mjs/index.js",
+  "types": "./x/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./x/mjs/index.js",
+      "require": "./x/cjs/index.js"
+    }
+  },
+  "devDependencies": {
+    "@ladle/react": "^4.1.1",
+    "@types/node": "^22.5.4",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint-config-nfour": "^3.5.0",
+    "@emotion/react": "^11.13.3",
+    "eslint": "8.43.0",
+    "typescript": "~5.5.4",
+    "vite": "^5.4.3",
+    "mobx": "^6.13.2",
+    "mobx-react-lite": "^4.0.7",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "peerDependencies": {
+    "react": ">= 18",
+    "react-dom": ">= 18",
+    "mobx": ">= 6",
+    "mobx-react-lite": ">= 4"
+  }
+}
