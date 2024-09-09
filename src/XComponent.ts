@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAutorun, useReaction } from './hooks';
-import { AsyncValue, BoolValue, Value, Boxed } from './mobx';
+import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
 
 class ClassType {}
 export const useStateClass = <C extends typeof ClassType>(
@@ -51,7 +51,7 @@ export const onProps = <
   }, [props]);
 };
 
-export const onOnUpdate = <
+export const useOnUpdate = <
   P extends Record<string, any>,
   V extends (props: P) => void,
 >(
@@ -120,13 +120,12 @@ xcomponent.useOnMounted = useOnMounted;
 xcomponent.useOnUnmounted = useOnUnmounted;
 xcomponent.useReaction = useOnReaction;
 xcomponent.useProps = onProps;
-xcomponent.useOnUpdate = onProps;
 xcomponent.Value = Value;
 xcomponent.AsyncValue = AsyncValue;
 xcomponent.BoolValue = BoolValue;
-xcomponent.Boxed = Boxed;
+xcomponent.BoxedValue = BoxedValue;
 
 xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);
 
-export { xcomponent as X, xcomponent as default, xcomponent as component };
+export { xcomponent as X, xcomponent as default };
