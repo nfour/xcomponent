@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "ladle dev -p 9005 ",
+    "dev": "ladle dev",
     "build": "pnpm build:clean; pnpm build:cjs; pnpm build:mjs;",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:mjs": "tsc -p tsconfig.mjs.json",
