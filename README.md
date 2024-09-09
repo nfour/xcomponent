@@ -294,10 +294,14 @@ then
 import { X } from '@/X'; // Or however you would like to import
 
 const MyComponent = X<{ someProp: number }>((props) => {
-  X.useRootState(); // Available project-wide now
+  const { api } = X.useRootState();
 
   const state = X.useState(() => class {
-    val = new X.SomeValueModel() // Available project-wide now
+    val = new X.SomeValueModel()
+
+    orders = new X.AsyncValue(async ({ from, to }: { from: Date, to: Date}) =>
+      api.stocks.fetch(`/orders?from=${from.getTime()}&to=${to.getTime()}`)
+    )
 
     get date() {
       return X.dayjs(this.val.value).tz('America/New_York').format('YYYY-MM-DD')
@@ -306,6 +310,8 @@ const MyComponent = X<{ someProp: number }>((props) => {
 
   // ...
   return <div css={{ color: 'red' }}>
+    {state.orders.isPending && 'Loading...'}
+    {state.orders.map(({ user, time }) => <div>{time} {user.name}</div>)}
     {state.val.value}
   </div>
 })
