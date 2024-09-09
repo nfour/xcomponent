@@ -183,7 +183,7 @@ import { MyComponentState } from './MyComponentState'
 // Can re-use the type defined by the state class to keep DRY
 type MyComponentProps = typeof MyComponentState['props']['value']
 
-export const MyComponent = X<MyComponentProps>((props) => {
+export const MyComponent = X((props: MyComponentProps) => {
   const state = X.useState(() => MyComponentState)
   X.useProps(props, state.props)
 
