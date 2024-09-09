@@ -1,6 +1,6 @@
 {
   "name": "@n4s/xcomponent",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": false,
   "scripts": {
     "dev": "ladle dev",
