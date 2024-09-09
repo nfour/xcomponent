@@ -129,19 +129,24 @@ export class MyStateClass {
   increment = () => this.count.set(this.count.value + 1)
 }
 
-// and both inside a component, inline:
+// and both inside a component, inlined look like this:
 export const MyComponent = X(() => {
   // Functional
   const state = X.useState(() => {
     const count = new X.Value(0)
     const increment = () => count.set(count.value + 1)
 
-    return { count, increment }
+    return {
+      count,
+      get someComputed() { return count.value + 999 }
+      increment,
+    }
   })
 
   // Class
   const state2 = X.useState(() => class {
     count = new X.Value(0)
+    get someComputed() { return this.count.value + 999 }
     increment = () => this.count.set(this.count.value + 1)
   })
 
