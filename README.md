@@ -25,13 +25,16 @@ The library provides ways to solve boilerplate and inconsistency issues that ari
 ### Drop in replacement for `observer`
 
 ```tsx
+//
 // BEFORE:
-
+//
 import { observer } from 'mobx-react-lite'
 
 const MyComponent = observer<{ someProp: number }>((props) => <>{props.someProp}</>)
 
+//
 // AFTER:
+//
 import { X } from '@n4s/xcomponent'
 
 const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
@@ -40,44 +43,51 @@ const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
 ### Enhanced composition pattern
 
 ```tsx
+//
 // BEFORE:
+//
 
 import { observer } from 'mobx-react-lite'
 
 const Dialog = observer<{ children: ReactNode }>((props) =>
-  <>
-    {props.children}
-  </>
+  <> {props.children} </>
 )
 
 const DialogHead = observer<{ children: ReactNode }>((props) =>
-  <h2>
-    {props.children}
-  </h2>
+  <h2>{props.children}</h2>
 )
 
-<Dialog><DialogHead>Title</DialogHead>Content</Dialog>
+const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
 
+//
 // AFTER:
+//
+
 import { X } from '@n4s/xcomponent'
 
-const Dialog = X<{ children: ReactNode }>((props) => <>{props.children}</>)
-  .with({
-    Head: X<{ children: ReactNode }>((props) => <h2 className={Dialog.classes.head}>{props.children}</h2>),
+const Dialog = X((props) =>
+  <>{props.children}</>
+)
+.with({
+  Head: X((props) =>
+    <h2 className={Dialog.classes.head}>{props.children}</h2>
+  ),
 
-    // Can provide any static property, such as surfacing public classnames to override styles with.
-    classes: {
-      head: 'dialog-head',
-    }
-  })
+  // Can provide any static property, such as surfacing public classnames to override styles with.
+  classes: {
+    head: 'dialog-head',
+  }
+})
 
-<Dialog><Dialog.Head>Title</Dialog.Head>Content</Dialog>
+const Example = () => <Dialog><Dialog.Head>Title</Dialog.Head>Content</Dialog>
 ```
 
 ### Full example comparison
 
 ```tsx
+//
 // BEFORE:
+//
 
 import { observer } from 'mobx-react-lite'
 import React from 'react'
@@ -121,7 +131,9 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
   </>
 })
 
+//
 // AFTER:
+//
 
 import { X } from '@n4s/xcomponent'
 
@@ -135,10 +147,9 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     }
   })
 
+  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
-  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
-  // X.useOnUpdated(props, (newProps) => state.props.set(newProps)) // Syncs prop changes with state.props efficiently
 
   return <>
     <div>{props.someProp}</div>
@@ -151,11 +162,14 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 
 ## Move class state wherever you need it
 
+State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
+
+In this example the state lives in another file, and the component is just a view into that state.
+
+- ./MyComponentState.ts
 ```tsx
-// FILE: ./MyComponentState.ts
 import { X } from '@n4s/xcomponent'
 
-// Can live outside of the react component, in this case it's in its own file and thus completely decoupled from React.
 export class MyComponentState {
   props = new X.Value({ someProp: 0 })
   count = new X.Value(0)
@@ -164,18 +178,18 @@ export class MyComponentState {
     return this.count.value + this.props.value.someProp
   }
 }
-
-// FILE: ./MyComponent.tsx
+```
+- ./MyComponent.tsx
+```tsx
 import { X } from '@n4s/xcomponent'
 import { MyComponentState } from './MyComponentState'
 
-// Can re-use the type defined by the state class!
+// Can re-use the type defined by the state class to keep DRY
 type MyComponentProps = typeof MyComponentState['props']['value']
 
 export const MyComponent = X<MyComponentProps>((props) => {
   const state = X.useState(() => MyComponentState)
-
-  X.useProps(props, state.props) // Keeps props in sync with our class instance
+  X.useProps(props, state.props)
 
   return <>
     <div>{props.someProp}</div>
@@ -237,20 +251,33 @@ const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-
-## Conventions
+## Conventions / Phylosophy
 
 ### Use `class` syntax for all state
 
-Mobx and classes go very well together, and classes are a great structure to represent the imperative nature of state. 
+Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state in Typescript.
 
-Local and global state each use the same class structure, which makes it easy to refactor state around.
+Local and global state each use the same class structure, which makes it easy to refactor state into different locations.
 
-### Use `X` as a namespace for all component and state primitives
+Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection.
 
-A convenient singleton to compose all general component & state patterns in your project. Think of it like a toolbelt.
+### Use `X` as a namespace for all generic component and state primitives
+
+The idea is that `X` is a namespace for all the tools you need to work with state and view. This should be customized for each project. It should be a small set of tools that are frequently used across the project and which have no meaningful cost to import everywhere.
+
+Examples:
+- Hooks
+- Utilities
+- Primitives
+- Simple structural components (X.Col, X.Row, X.Grid etc.)
+  - Should not have dependencies on other components or large libraries
+  - Avoid `X.Button`, `X.DateSelector`, `X.Select` etc. as these are too specific and should be in a component library, as they would likely include dependencies and significant runtime cost.
+
+The goal is not to have a large library of components, but to have a small set of tools that are frequently used and which can be easily reviewed and understood by the team through a single compositional root where `X` is composed.
 
 ### Dismiss unecessary React hooks
+
+Moving logic to `mobx` allows for the majority of React state-related hooks to be dismissed. The nature of observables means that many of React's lifecycle hooks corrupt the state lifecycle, and should be avoided. We want to let `mobx` handle it.
 
 - Good:
   - `useEffect`
