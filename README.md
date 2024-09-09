@@ -110,7 +110,7 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 
 ## Details of the API
 
-You can use a class based styled (a convention), or a functional style.
+You can use a class based styled (my preference currently!), or a functional style.
 
 ```tsx
 
