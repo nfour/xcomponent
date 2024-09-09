@@ -312,7 +312,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
   return <div css={{ color: 'red' }}>
     {state.orders.isPending && 'Loading...'}
     {state.orders.error && <>{state.orders.error.message}</>}
-    {state.orders.map(({ user, time }) => <div>{time} {user.name}</div>)}
+    {state.orders.value?.map(({ user, time }) => <div>{time} {user.name}</div>)}
     {state.val.value}
   </div>
 })
