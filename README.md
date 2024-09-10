@@ -125,7 +125,6 @@ export const MyStateFn = () => {
 // Class style
 export class MyStateClass {
   count = new X.Value(0)
-
   increment = () => this.count.set(this.count.value + 1)
 }
 
