@@ -60,6 +60,10 @@ export const MyRandomNumberGenerator = X<{
       },
   );
 
+  const funcState = X.useState(() => ({
+    someState: 'hello',
+  }));
+
   // Whenever a new react prop object values change occurs,
   // update the Value store with only those changed
   X.useProps(props, state.props);

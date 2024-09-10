@@ -7,17 +7,24 @@ import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
 class ClassType {}
 // TODO: support regular objects too - not just classes
 // just need to check before `new`ing and update the type.
-export const useStateClass = <C extends typeof ClassType>(
+export const useStateClass = <C extends typeof ClassType | object>(
   initializer: () => C,
 ) =>
   useState(() => {
-    try {
-      // improve logic to actually check if the class is mobxified
-      return makeAutoObservable(new (initializer())());
-    } catch {
-      return new (initializer())();
-    }
-  })[0] as InstanceType<C>;
+    const store = (() => {
+      const uninitializedStore = initializer();
+
+      if (typeof uninitializedStore === 'function') {
+        const ClassStore = uninitializedStore as typeof ClassType;
+
+        return new ClassStore();
+      }
+
+      return uninitializedStore;
+    })();
+
+    return makeAutoObservable(store);
+  })[0] as C extends typeof ClassType ? InstanceType<C> : C;
 
 export const useOnMounted = (fn: () => any) => {
   useEffect(() => fn(), []);
