@@ -319,11 +319,10 @@ const MyComponent = X<{ someProp: number }>((props) => {
   // ... blah blah ...
 
   return <div css={{ color: 'red' }}>
-  {/* ... do something here related to setting dates ... */}
+    {/* ... do something here related to setting dates ... */}
     {state.orders.isPending && 'Loading...'}
     {state.orders.error && <>{state.orders.error.message}</>}
     {state.orders.value?.map(({ user, time }) => <div>{time} {user.name}</div>)}
-    {state.val.value}
   </div>
 })
 ```
