@@ -258,11 +258,11 @@ Functional code can also suffer from the same issues, but it is easier to refact
 
 ### As a compositional root toolbox for your project
 
-I posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a project.
+I *tentatively* posit the idea that we could encourage a single compositional root for all tools and generic components that are frequently used across a single project.
 
-You would re-export your own `X`. You would need to avoid any expensive dependencies.
+You would re-export your own `X` to use throughout your projects state & components. Ideally no-where else, leave that to regular imports & conventions.
 
-This pattern would then serve to bring together consistency within a project - there is something to be said for auto-discovery where one doesn't have to sift through a sea of tsconfig path aliases, components & utilitie dumping folders etc.
+This pattern would then serve to bring together consistency within a project - there is something to be said for a curated, deliberate namespace with auto-discovery - so that one doesn't have to sift through a sea of tsconfig path aliases, components & utility dumping folders etc. in order to be consistent with the project's conventions.
 
 Only the most battle hardened, necessary tools should appear in your projects `X` root.
 
