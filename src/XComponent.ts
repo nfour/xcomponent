@@ -5,6 +5,8 @@ import { useAutorun, useReaction } from './hooks';
 import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
 
 class ClassType {}
+// TODO: support regular objects too - not just classes
+// just need to check before `new`ing and update the type.
 export const useStateClass = <C extends typeof ClassType>(
   initializer: () => C,
 ) =>
