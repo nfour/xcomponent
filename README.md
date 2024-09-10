@@ -277,11 +277,9 @@ However, state functions can be more concise.
 
 Ideally you should choose one pattern and roll with it throughout the project. I personally find classes easier to construct trees with, handle dependency injection etc.
 
-Classes also double up as a type interface so that we may effectively define the shape of our data and avoid boilerplate and misdirection. The key issue people find with classes is that it can become easy to overload them with too many responsibilities, which is why we should take note of the single responsibility principal.
+Classes also double up as a type interface. The key issue people find with classes is that it can become easier than other structures to become careless, and to overload them with too many responsibilities, which is why we should take note of the single responsibility principal.
 
-We can compose classes as a tree, with many classes within them as needed, recursively.
-
-Functional code can also suffer from the same issues, but it is easier to refactor and move around. That flexibility can be a double edged sword, which is why I prefer classes for state - methods, computed values, and actions are all in one place with the consistent syntax throughout.
+Functional code can also suffer from the same issues, but it can be easier to refactor and move around. That flexibility can be a double edged sword, however.
 
 ### As a compositional root toolbox for your project
 
