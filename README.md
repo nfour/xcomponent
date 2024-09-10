@@ -153,6 +153,31 @@ export const MyComponent = X(() => {
 })
 ```
 
+Note: When defining GLOBAL state functions or classes you will still need to add in `makeAutoObservable` or `makeObservable` as needed - it's just standard mobx at this point, no react compatability needed - these mobx utilities could be added to `X`, too, for convenience. 
+
+```tsx
+import { makeAutoObservable } from 'mobx'
+
+// standard mobx class state
+export class MyGlobalState {
+  constructor() {
+    makeAutoObservable(this)
+  }
+
+  count = new X.Value(0)
+  increment = () => this.count.set(this.count.value + 1)
+}
+
+export function MyGlobalStateFn() {
+  const count = new X.Value(0)
+  const increment = () => count.set(count.value + 1)
+
+  return makeAutoObservable({ count, increment })
+}
+
+```
+
+
 ## State should be decoupled from the component
 
 State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
