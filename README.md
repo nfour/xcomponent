@@ -447,7 +447,9 @@ Very similar to `Value`, however, allows for the getter and setter to be defined
 const blah = { something: 'banana' }
 
 const somethingFromUri = new BoxedValue(
+  // getter
   () => uriRoutes.someRoute.search.something,
+  // setter
   (newValue) => uriRoutes.someRoute.push((uri) => ({ search: { something: newValue } })),
 )
 
