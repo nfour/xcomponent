@@ -30,7 +30,7 @@ export const useOnUnmounted = (fn: () => void) => {
 export const useOnReaction = (
   ...inputs: Parameters<typeof useReaction> | Parameters<typeof useAutorun>
 ) => {
-  if (!(inputs[1] instanceof Function)) return useAutorun(inputs[0]);
+  if (!(inputs[1] instanceof Function)) return useAutorun(inputs[0], inputs[1]);
   else return useReaction(inputs[0], inputs[1], inputs[2]);
 };
 
