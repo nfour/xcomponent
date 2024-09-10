@@ -300,7 +300,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
     date = new X.SomeDateRelatedModel()
 
     orders = new X.AsyncValue(async ({ from, to }: { from: Date, to: Date}) =>
-      api.stocks.fetch(`/orders?from=${from.getTime()}&to=${to.getTime()}`)
+      api.fetch(`/orders?from=${from.getTime()}&to=${to.getTime()}`)
     )
 
     get date() {
