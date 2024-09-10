@@ -429,7 +429,11 @@ example.files.error // undefined - no error
 example.files.isPending // false - we already awaited it
 
 const v = new AsyncValue(() => fetchUsersList())
-await v.query() // Don't need to provide params as none are defined
+v.value // undefined
+const promise = v.query() // Don't need to provide params as none are defined
+v.isPending // true
+await promise
+v.isPending // false
 v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
 ```
 
