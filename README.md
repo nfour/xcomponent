@@ -273,7 +273,7 @@ const Example = () =>
 
 Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state.
 
-However, functional components are more ergonomic for simple state, and are more concise.
+However, functional components can be more concise.
 
 Ideally you should choose one pattern and roll with it throughout the project. I personally find classes easier to construct trees with, handle dependency injection etc.
 
