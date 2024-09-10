@@ -464,7 +464,7 @@ const somethingWrappedToOptimizeObservability = new BoxedValue(
 )
 
 somethingWrappedToOptimizeObservability.value // 'banana'
-somethingWrappedToOptimizeObservability.set('banana') // does nothing, as not setter was provided
+somethingWrappedToOptimizeObservability.set('banana') // does nothing, because no setter
   
 ```
 
@@ -479,9 +479,11 @@ const isOpen = new BoolValue(true)
 isOpen.toggle() // false
 isOpen.toggle() // true
 isOpen.setFalse()
+isOpen.value // false
 isOpen.isTrue // false
 isOpen.setTrue()
 isOpen.isTrue // true
+isOpen.value // false
 
 const Example = X(() => 
   <>
