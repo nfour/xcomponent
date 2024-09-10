@@ -194,7 +194,7 @@ In this example the state lives in another file, and the component is just a vie
 import { X } from '@n4s/xcomponent'
 
 export class MyComponentState {
-  props = new X.Value({ someProp: 0 })
+  props = new X.Value({ someProp: 0 }) // Here we store the component's props, but observable
   count = new X.Value(0)
 
   get combinedNumber() {
@@ -209,7 +209,7 @@ export class MyComponentState {
 import { X } from '@n4s/xcomponent'
 import { MyComponentState } from './MyComponentState'
 
-// Can re-use the type defined by the state class to keep DRY
+// Can re-use the type defined by the state
 type MyComponentProps = typeof MyComponentState['props']['value']
 
 export const MyComponent = X((props: MyComponentProps) => {
@@ -223,9 +223,7 @@ export const MyComponent = X((props: MyComponentProps) => {
     <button onClick={state.increment}>Incr</button>
   </>
 })
-
 ```
-
 
 ### Component composition extender
 
