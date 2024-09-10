@@ -165,6 +165,7 @@ export class MyGlobalState {
   }
 
   count = new X.Value(0)
+  get someComputed() { return this.count.value + 999 }
   increment = () => this.count.set(this.count.value + 1)
 }
 
@@ -172,7 +173,11 @@ export function MyGlobalStateFn() {
   const count = new X.Value(0)
   const increment = () => count.set(count.value + 1)
 
-  return makeAutoObservable({ count, increment })
+  return makeAutoObservable({
+    count,
+    increment, 
+    get someComputed() { return count.value + 999 }})
+   })
 }
 
 ```
