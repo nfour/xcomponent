@@ -51,7 +51,11 @@ export const onProps = <
   }, [props]);
 };
 
-export const useOnUpdate = <
+/**
+ * A generic form of .useProps that takes a callback instead of a Value
+ * [[Work in progress]]
+ */
+const useOnUpdate = <
   P extends Record<string, any>,
   V extends (props: P) => void,
 >(
@@ -79,11 +83,11 @@ export const useOnUpdate = <
  * @example
  *
  * // Simple component
- * const MyComponent = component<{ prop1: number}>(({ prop1 }) => <>{prop1}</>)
+ * const MyComponent = xcomponent<{ prop1: number}>(({ prop1 }) => <>{prop1}</>)
  *
  * // With members
- * const Dialog = component<{ prop1: number}>(({ prop1 }) => <>{prop1}</>)
- *   .with({ Head: component<{ prop2: number}>(({ prop2 }) => <>{prop2}</>) })
+ * const Dialog = xcomponent<{ prop1: number}>(({ prop1 }) => <>{prop1}</>)
+ *   .with({ Head: xcomponent<{ prop2: number}>(({ prop2 }) => <>{prop2}</>) })
  *
  * // later
  *
