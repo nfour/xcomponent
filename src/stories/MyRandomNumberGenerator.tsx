@@ -1,6 +1,7 @@
 import { X } from '../XComponent';
 import { css } from '@emotion/react';
 import { SomeObservableComponentWithAIntervalTimer } from './SomeObservableComponentWithAIntervalTimer';
+import { makeAutoObservable } from 'mobx';
 
 export const MyRandomNumberGenerator = X<{
   maximumGenerationAttempts: number;
@@ -16,6 +17,8 @@ export const MyRandomNumberGenerator = X<{
     () =>
       class {
         constructor() {
+          makeAutoObservable(this);
+
           console.log(
             'state constructed. should only see this on first render, or when this classes code is edited on hot reload',
           );
@@ -77,12 +80,10 @@ export const MyRandomNumberGenerator = X<{
     // cleanup
   });
 
-  // mobx autorun when there is only 1 function argument
-  X.useReaction(() => {
+  X.useAutorun(() => {
     console.log('fetchin number', state.myGeneratedNumber.isPending);
   });
 
-  // mobx reaction when there is 2 function arguments
   X.useReaction(
     () => state.myGeneratedNumber.value,
     (newNumber) => {

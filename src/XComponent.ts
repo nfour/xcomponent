@@ -1,90 +1,14 @@
-import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState, type ReactNode } from 'react';
-import { useAutorun, useReaction } from './hooks';
+import { type ReactNode } from 'react';
+import {
+  useAutorun,
+  useOnMounted,
+  useOnUnmounted,
+  useProps,
+  useReaction,
+  useState,
+} from './hooks';
 import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
-
-class ClassType {}
-// TODO: support regular objects too - not just classes
-// just need to check before `new`ing and update the type.
-export const useStateClass = <C extends typeof ClassType | object>(
-  initializer: () => C,
-) =>
-  useState(() => {
-    const store = (() => {
-      const uninitializedStore = initializer();
-
-      if (typeof uninitializedStore === 'function') {
-        const ClassStore = uninitializedStore as typeof ClassType;
-
-        return new ClassStore();
-      }
-
-      return uninitializedStore;
-    })();
-
-    return makeAutoObservable(store);
-  })[0] as C extends typeof ClassType ? InstanceType<C> : C;
-
-export const useOnMounted = (fn: () => any) => {
-  useEffect(() => fn(), []);
-};
-
-export const useOnUnmounted = (fn: () => void) => {
-  useEffect(() => fn, []);
-};
-
-export const useOnReaction = (
-  ...inputs: Parameters<typeof useReaction> | Parameters<typeof useAutorun>
-) => {
-  if (!(inputs[1] instanceof Function)) return useAutorun(inputs[0], inputs[1]);
-  else return useReaction(inputs[0], inputs[1], inputs[2]);
-};
-
-export const onProps = <
-  P extends Record<string, any>,
-  V extends Value<Record<string, any>>,
->(
-  props: P,
-  store: V,
-) => {
-  // TODO: need to only update specific props that actually changed, not spread all em in
-  useEffect(() => {
-    const propsObjectButOnlyChanged = Object.fromEntries(
-      Object.entries(props).filter(
-        ([key, value]) => store.value[key] !== value,
-      ),
-    );
-
-    store.set({ ...store.value, ...propsObjectButOnlyChanged });
-  }, [props]);
-};
-
-/**
- * A generic form of .useProps that takes a callback instead of a Value
- * [[Work in progress]]
- */
-const useOnUpdate = <
-  P extends Record<string, any>,
-  V extends (props: P) => void,
->(
-  props: P,
-  cb: V,
-) => {
-  let previousProps: P; // todo put in usestate
-
-  useEffect(() => {
-    const propsObjectButOnlyChanged = Object.fromEntries(
-      Object.entries(props).filter(
-        ([key, value]) => previousProps[key] !== value,
-      ),
-    );
-
-    cb(propsObjectButOnlyChanged as P);
-
-    previousProps = props;
-  }, [props]);
-};
 
 /**
  * A `observer` wrapped component with type support for static props
@@ -106,7 +30,22 @@ const useOnUpdate = <
  */
 export const xcomponent = <PROPS extends {}>(
   Fn: (p: { className?: string } & PROPS) => ReactNode,
+  {
+    setDisplayName = true,
+  }: {
+    /** @default true
+     * Set the displayName of the component to the file and line number for easer debugging
+     */
+    setDisplayName?: boolean;
+  } = {},
 ) => {
+  if (setDisplayName)
+    try {
+      throw new Error('Name');
+    } catch (err: any) {
+      setComponentNameForDebugging(Fn, err);
+    }
+
   const observed = observer(Fn);
 
   const withMembers = <MEMBERS extends { [k: string]: any }>(
@@ -122,17 +61,37 @@ export const xcomponent = <PROPS extends {}>(
   return observed as typeof observed & { with: typeof withMembers };
 };
 
+function setComponentNameForDebugging(
+  Fn: Function & Partial<Record<'name' | 'displayName', string>>,
+  error: Error,
+) {
+  const sourceFileLine = error.stack?.split('\n')?.[3];
+  // @example http://localhost:9005/root/navBar/NavBar.tsx?t=1708482663107:34:26
+  const stackPath = sourceFileLine
+    ?.split(/\s*at /)?.[1]
+    ?.replace(/[?]t=\d+/, '');
+
+  const fileName = stackPath?.match(/\/([^/]+)\.tsx?/)?.[1];
+  const name = `COMPONENT in ${fileName} ${stackPath}`;
+
+  return Object.defineProperties(Fn, {
+    name: { value: name },
+    displayName: { value: name },
+  });
+}
+
 /**
  * A hook to create a stateful class instance, for mobx class stores
  * Enables react-refresh optimizations by using the `useState` name
  * - The contained component can be edited as normal without regenerating this store
  * - When code within this store is edited, the store will be recreated, just like React.useState
  */
-xcomponent.useState = useStateClass;
+xcomponent.useState = useState;
 xcomponent.useOnMounted = useOnMounted;
 xcomponent.useOnUnmounted = useOnUnmounted;
-xcomponent.useReaction = useOnReaction;
-xcomponent.useProps = onProps;
+xcomponent.useReaction = useReaction;
+xcomponent.useAutorun = useAutorun;
+xcomponent.useProps = useProps;
 xcomponent.Value = Value;
 xcomponent.AsyncValue = AsyncValue;
 xcomponent.BoolValue = BoolValue;

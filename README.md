@@ -364,6 +364,7 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
       -  `useOnUnmounted`
       -  `useProps`
       -  `useReaction`
+      -  `useAutorun`
   - `useLayoutEffect`
   - `useRef`
 - Unecessary:
