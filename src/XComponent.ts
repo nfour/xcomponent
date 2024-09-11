@@ -9,6 +9,7 @@ import {
   useState,
 } from './hooks';
 import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
+import { setComponentNameForDebugging } from './utils';
 
 /**
  * A `observer` wrapped component with type support for static props
@@ -56,29 +57,8 @@ export const xcomponent = <PROPS extends {}>(
     return observed as typeof observed & MEMBERS;
   };
 
-  Object.assign(observed, { with: withMembers });
-
-  return observed as typeof observed & { with: typeof withMembers };
+  return Object.assign(observed, { with: withMembers });
 };
-
-function setComponentNameForDebugging(
-  Fn: Function & Partial<Record<'name' | 'displayName', string>>,
-  error: Error,
-) {
-  const sourceFileLine = error.stack?.split('\n')?.[3];
-  // @example http://localhost:9005/root/navBar/NavBar.tsx?t=1708482663107:34:26
-  const stackPath = sourceFileLine
-    ?.split(/\s*at /)?.[1]
-    ?.replace(/[?]t=\d+/, '');
-
-  const fileName = stackPath?.match(/\/([^/]+)\.tsx?/)?.[1];
-  const name = `COMPONENT in ${fileName} ${stackPath}`;
-
-  return Object.defineProperties(Fn, {
-    name: { value: name },
-    displayName: { value: name },
-  });
-}
 
 /**
  * A hook to create a stateful class instance, for mobx class stores
