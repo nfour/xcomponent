@@ -49,15 +49,15 @@ export const xcomponent = <PROPS extends {}>(
 
   const observed = observer(Fn);
 
-  const withMembers = <MEMBERS extends { [k: string]: any }>(
-    members: MEMBERS,
-  ) => {
+  const withMembers = <MEMBERS extends object>(members: MEMBERS) => {
     Object.assign(observed, members);
 
     return observed as typeof observed & MEMBERS;
   };
 
-  return Object.assign(observed, { with: withMembers });
+  return Object.assign(observed, { with: withMembers }) as typeof observed & {
+    with: typeof withMembers;
+  };
 };
 
 /**
