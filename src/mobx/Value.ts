@@ -26,5 +26,3 @@ export class Value<STATE = any> {
     this.value = state;
   }
 }
-
-export { Value as ValueModel };

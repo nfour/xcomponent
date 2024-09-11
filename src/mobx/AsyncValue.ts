@@ -145,5 +145,3 @@ export class AsyncValue<VALUE, PAYLOAD = any> {
   /** Creates an autorun reaction whenever the value changes */
   onValue = (cb: (v: this['value']) => void) => autorun(() => cb(this.value));
 }
-
-export { AsyncValue as AsyncValueModel };

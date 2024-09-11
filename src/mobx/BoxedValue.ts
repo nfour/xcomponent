@@ -39,5 +39,3 @@ export class BoxedValue<GET extends unknown, SET extends GET = GET> {
     return this.getter();
   }
 }
-
-export { BoxedValue as Boxed };

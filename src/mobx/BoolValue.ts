@@ -51,9 +51,3 @@ export class BoolValue {
     this.value = state;
   }
 }
-
-export {
-  BoolValue as BooleanModel,
-  BoolValue as BooleanValueModel,
-  BoolValue as BooleanValue,
-};
