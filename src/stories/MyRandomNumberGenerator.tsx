@@ -7,8 +7,6 @@ export const MyRandomNumberGenerator = X<{
   maximumGenerationAttempts: number;
   range: { from: number; to: number };
 }>((props) => {
-  throw new Error('This is a demo error');
-
   const { api } = useSomeRootState();
   // `component.useState`, due to the name, gets picked up by react-refresh and operates correctly between hot-reloads
   // Ideally this would be `component.state(() => ...)`
