@@ -1,8 +1,34 @@
+<!-- vscode-markdown-toc -->
+* 1. [Why](#Why)
+* 2. [How does it compare?](#Howdoesitcompare)
+	* 2.1. [Drop in replacement for `observer`](#Dropinreplacementforobserver)
+	* 2.2. [Full example comparison](#Fullexamplecomparison)
+* 3. [Details of the API](#DetailsoftheAPI)
+* 4. [State should be decoupled from the component](#Stateshouldbedecoupledfromthecomponent)
+	* 4.1. [Component composition extender](#Componentcompositionextender)
+* 5. [Conventions / Philosophy](#ConventionsPhilosophy)
+	* 5.1. [Use either `class` or `function` syntax consistently for all state](#Useeitherclassorfunctionsyntaxconsistentlyforallstate)
+	* 5.2. [As a compositional root toolbox for your project](#Asacompositionalroottoolboxforyourproject)
+	* 5.3. [Dismiss unecessary React hooks](#DismissunecessaryReacthooks)
+* 6. [Helper models](#Helpermodels)
+	* 6.1. [Value](#Value)
+	* 6.2. [AsyncValue](#AsyncValue)
+	* 6.3. [BoxedValue](#BoxedValue)
+	* 6.4. [BoolValue](#BoolValue)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
 # XComponent
 
 This is a micro framework that brings together MobX and React in order to solve performance, boilerplate and lifecycle issues with React.
 
-## Why
+
+
+##  1. <a name='Why'></a>Why
 
 React's ecosystem is a great place to be, so we do not want to leave it just because of how annoying `hooks`, state management and render performance tweaking is.
 
@@ -12,9 +38,9 @@ It solves the performance problems, but it also adds boilerplate but isn't quite
 
 This micro frameworks exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
 
-## How does it compare?
+##  2. <a name='Howdoesitcompare'></a>How does it compare?
 
-### Drop in replacement for `observer`
+###  2.1. <a name='Dropinreplacementforobserver'></a>Drop in replacement for `observer`
 
 ```tsx
 import { observer } from 'mobx-react-lite'
@@ -26,7 +52,7 @@ import { X } from '@n4s/xcomponent'
 const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
 ```
 
-### Full example comparison
+###  2.2. <a name='Fullexamplecomparison'></a>Full example comparison
 
 ```tsx
 //
@@ -108,7 +134,7 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-## Details of the API
+##  3. <a name='DetailsoftheAPI'></a>Details of the API
 
 You can use a class based styled (my preference currently!), or a functional style.
 
@@ -183,7 +209,7 @@ export function MyGlobalStateFn() {
 ```
 
 
-## State should be decoupled from the component
+##  4. <a name='Stateshouldbedecoupledfromthecomponent'></a>State should be decoupled from the component
 
 State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
 
@@ -225,7 +251,7 @@ export const MyComponent = X((props: MyComponentProps) => {
 })
 ```
 
-### Component composition extender
+###  4.1. <a name='Componentcompositionextender'></a>Component composition extender
 
 ```tsx
 //
@@ -267,9 +293,9 @@ const Example = () =>
   </Dialog>
 ```
 
-## Conventions / Philosophy
+##  5. <a name='ConventionsPhilosophy'></a>Conventions / Philosophy
 
-### Use either `class` or `function` syntax consistently for all state
+###  5.1. <a name='Useeitherclassorfunctionsyntaxconsistentlyforallstate'></a>Use either `class` or `function` syntax consistently for all state
 
 Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state.
 
@@ -281,7 +307,7 @@ Classes also double up as a type interface. The key issue people find with class
 
 Functional code can also suffer from the same issues, but it can be easier to refactor and move around. That flexibility can be a double edged sword, however.
 
-### As a compositional root toolbox for your project
+###  5.2. <a name='Asacompositionalroottoolboxforyourproject'></a>As a compositional root toolbox for your project
 
 I *tentatively* posit the idea that we could encourage a single compositional root for all tools and generic components that are frequently used across a single project.
 
@@ -353,7 +379,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
 ```
 
 
-### Dismiss unecessary React hooks
+###  5.3. <a name='DismissunecessaryReacthooks'></a>Dismiss unecessary React hooks
 
 Moving logic to `mobx` allows for the majority of React state-related hooks to be dismissed. The nature of observables means that many of React's lifecycle hooks corrupt the state lifecycle, and should be avoided. We want to let `mobx` handle it.
 
@@ -374,9 +400,9 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
   - `useMemo` maybe?
   - etc.
 
-## Helper models
+##  6. <a name='Helpermodels'></a>Helper models
 
-### Value
+###  6.1. <a name='Value'></a>Value
 
 The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
 
@@ -394,7 +420,7 @@ selectedFruit.set('banana') // Valid
 selectedFruit.value // 'banana'
 ```
 
-### AsyncValue
+###  6.2. <a name='AsyncValue'></a>AsyncValue
 
 Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
 
@@ -439,7 +465,7 @@ v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
 ```
 
 
-### BoxedValue
+###  6.3. <a name='BoxedValue'></a>BoxedValue
 
 Very similar to `Value`, however, allows for the getter and setter to be defined seperately, and additionally encapsulates the observable value inside the closure.
 
@@ -469,7 +495,7 @@ somethingWrappedToOptimizeObservability.set('banana') // does nothing, because n
   
 ```
 
-### BoolValue
+###  6.4. <a name='BoolValue'></a>BoolValue
 
 A `Value` that is specifically for boolean values. It has a few additional methods to make working with booleans easier.
 
@@ -495,3 +521,93 @@ const Example = X(() =>
 ```
 
 
+## Guides
+
+### Working with class-based state
+
+#### Scaffolding a new project
+
+```tsx
+
+// ./X.ts
+
+import { X as XComponent } from '@n4s/XComponent';
+import { useRootState } from './useRootState';
+
+export const X = XComponent.extend({
+  useRootState
+});
+
+// ./src/RootState.ts
+
+// 
+import { X } from '@/X'
+
+export class RootState {
+  router = new RouterState(() => this)
+  dataApi = new DataApiState(() => this)
+  authApi = new AuthApiState(() => this)
+}
+
+// ./src/RouterState.ts
+
+import { X } from '@/X'
+import { XRouter, XRoute } from 'xroute
+import { createBrowserHistory } from 'history
+
+export class RouterState {
+  router = new XRouter([
+    XRoute('home')
+      .Resource('/') // @example url: /
+      .Type<{
+        pathname: {},
+        search: { section?: string },
+      }>(),
+    XRoute('login').Resource('/login'), // @example url: /login
+    XRoute('logout').Resource('/logout'), // @example url: /logout
+    XRoute('profile')
+      .Resource('/profile/:userId')
+      .Type<{
+        pathname: { userId: string },
+        search: {},
+      }>(),
+    XRoute('app').Resource('/app'),
+    XRoute('notFound').Resource('*'),
+  ], createBrowserHistory())
+
+}
+
+// ./src/useRootState.ts
+
+import { useContext } from 'react'
+import { type RootState } from './RootState'
+
+export const RootStateContext = React.createContext<RootState>(null)
+export function useRootState() {
+  return useContext(RootStateContext)
+}
+
+// ./src/Root.tsx
+
+import { X } from '@/X'
+
+export const Root = X(() => {
+  const state = X.useState(() => new RootState())
+
+  return <RootStateContext.Provider value={state}>
+    <Routing />
+  </RootStateContext.Provider>
+})
+
+// ./src/Routing.tsx
+
+import { X } from '@/X'
+
+export const Routing = X(() => {
+  const { router } = X.useRootState()
+
+  return <Router>
+    <Route path="/home" component={Home} />
+    <Route path="/login" component={Login} />
+  </Router>
+})

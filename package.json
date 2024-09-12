@@ -26,25 +26,28 @@
     "url": "https://github.com/nfour/xcomponent"
   },
   "devDependencies": {
+    "@emotion/react": "^11.13.3",
     "@ladle/react": "^4.1.1",
     "@types/node": "^22.5.4",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "eslint-config-nfour": "^3.5.0",
-    "@emotion/react": "^11.13.3",
     "eslint": "8.43.0",
-    "typescript": "~5.5.4",
-    "vite": "^5.4.3",
+    "zod": "^3.23.8",
+    "eslint-config-nfour": "^3.5.0",
+    "history": "^5.3.0",
     "mobx": "^6.13.2",
     "mobx-react-lite": "^4.0.7",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.3",
+    "xroute": "^15.5.0"
   },
   "peerDependencies": {
-    "react": ">= 18",
-    "react-dom": ">= 18",
     "mobx": ">= 6",
-    "mobx-react-lite": ">= 4"
+    "mobx-react-lite": ">= 4",
+    "react": ">= 18",
+    "react-dom": ">= 18"
   }
 }
