@@ -2,6 +2,7 @@
   "name": "@n4s/xcomponent",
   "version": "2.2.0",
   "private": false,
+  "type": "module",
   "scripts": {
     "dev": "ladle dev",
     "build": "pnpm build:clean; pnpm build:cjs; pnpm build:mjs;",
@@ -16,6 +17,10 @@
     ".": {
       "import": "./x/mjs/index.js",
       "require": "./x/cjs/index.js"
+    },
+    "./*": {
+      "import": "./x/esm/*.js",
+      "require": "./x/cjs/*.js"
     }
   },
   "files": [
@@ -33,16 +38,17 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "8.43.0",
-    "zod": "^3.23.8",
     "eslint-config-nfour": "^3.5.0",
+    "fetch-mock": "^11.1.3",
     "history": "^5.3.0",
     "mobx": "^6.13.2",
     "mobx-react-lite": "^4.0.7",
+    "msw": "^2.4.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "typescript": "~5.6.2",
     "vite": "^5.4.3",
-    "xroute": "^15.5.0"
+    "xroute": "^15.7.0"
   },
   "peerDependencies": {
     "mobx": ">= 6",

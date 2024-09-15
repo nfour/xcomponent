@@ -5,13 +5,15 @@
     "target": "ES2022",
     "outDir": "./x",
     "declaration": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/X": [
-        "./src/stories/demoApp/X.ts"
+      "@/*": [
+        "./src/stories/demoApp/*"
       ],
     }
   },

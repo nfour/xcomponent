@@ -1,11 +1,28 @@
 import { makeAutoObservable } from 'mobx';
-import type { RootState } from '../RootState';
-import { AsyncValue } from '../../../../mobx';
+import type { AuthApiState } from './AuthApiState';
+import { MOCKED_API_URL } from '@/__mocks__/api/fetchMocks';
+
+// Lets use a mock URL to simulate an actual api flow
+const BASE_URL = MOCKED_API_URL;
 
 export class DataApiState {
-  constructor(private ctx: () => RootState) {
+  constructor(public ctx: () => { authApi: AuthApiState }) {
     makeAutoObservable(this);
   }
+
+  getUser = async ({ username }: { username: string }) => {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    return this.getAllUsers().then((users) =>
+      users.find((u) => u.username === username),
+    );
+  };
+
+  getAllUsers = async () => {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    return this.fetch<{ username: string; name: string }[]>(`/api/users`);
+  };
 
   /**
    * We made a fetch method that adds the Authorization header to the request
@@ -13,10 +30,10 @@ export class DataApiState {
    *
    * Also provides a return type for the fetch method.
    */
-  fetch = <R>(path: string, opts?: RequestInit) => {
+  private fetch = <R>(path: string, opts?: RequestInit) => {
     const { authToken } = this.ctx().authApi;
-    const BASE_URL = 'https://api.example.com';
 
+    // Fetch data from the mock server
     return fetch(BASE_URL + path, {
       ...opts,
       headers: {
@@ -25,22 +42,4 @@ export class DataApiState {
       },
     }).then((res) => res.json() as Promise<R>);
   };
-
-  users = new AsyncValue(() =>
-    this.fetch<{
-      users: {
-        id: number;
-        name: string;
-      }[];
-    }>('/api/users'),
-  );
-
-  me = new AsyncValue(() =>
-    this.fetch<{
-      user: {
-        id: number;
-        name: string;
-      };
-    }>('/api/me'),
-  );
 }

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "target": "es2019",
     "module": "CommonJS",
+    "moduleResolution": "Node",
     "outDir": "./x/cjs",
     "jsx": "react-jsx",
     "jsxImportSource": null

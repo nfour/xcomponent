@@ -12,7 +12,6 @@ export const Demo = () => {
     return () => clearInterval(interval);
   });
 
-
   return (
     <div>
       <MyRandomNumberGenerator
