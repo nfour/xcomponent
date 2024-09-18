@@ -1,34 +1,29 @@
-<!-- vscode-markdown-toc -->
-* 1. [Why](#Why)
-* 2. [How does it compare?](#Howdoesitcompare)
-	* 2.1. [Drop in replacement for `observer`](#Dropinreplacementforobserver)
-	* 2.2. [Full example comparison](#Fullexamplecomparison)
-* 3. [Details of the API](#DetailsoftheAPI)
-* 4. [State should be decoupled from the component](#Stateshouldbedecoupledfromthecomponent)
-	* 4.1. [Component composition extender](#Componentcompositionextender)
-* 5. [Conventions / Philosophy](#ConventionsPhilosophy)
-	* 5.1. [Use either `class` or `function` syntax consistently for all state](#Useeitherclassorfunctionsyntaxconsistentlyforallstate)
-	* 5.2. [As a compositional root toolbox for your project](#Asacompositionalroottoolboxforyourproject)
-	* 5.3. [Dismiss unecessary React hooks](#DismissunecessaryReacthooks)
-* 6. [Helper models](#Helpermodels)
-	* 6.1. [Value](#Value)
-	* 6.2. [AsyncValue](#AsyncValue)
-	* 6.3. [BoxedValue](#BoxedValue)
-	* 6.4. [BoolValue](#BoolValue)
-
-<!-- vscode-markdown-toc-config
-	numbering=true
-	autoSave=true
-	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->
-
 # XComponent
 
 This is a micro framework that brings together MobX and React in order to solve performance, boilerplate and lifecycle issues with React.
 
++ [1. Why](#1-why)
++ [2. How does it compare?](#2-how-does-it-compare)
+  + [2.1. Drop in replacement for `observer`](#21-drop-in-replacement-for-observer)
+  + [2.2. Full example comparison](#22-full-example-comparison)
++ [3. Details of the API](#3-details-of-the-api)
++ [4. State should be decoupled from the component](#4-state-should-be-decoupled-from-the-component)
+  + [4.1. Component composition extender](#41-component-composition-extender)
++ [5. Conventions / Philosophy](#5-conventions--philosophy)
+  + [5.1. Use either `class` or `function` syntax consistently for all state](#51-use-either-class-or-function-syntax-consistently-for-all-state)
+  + [5.2. As a compositional root toolbox for your project](#52-as-a-compositional-root-toolbox-for-your-project)
+  + [5.3. Dismiss unecessary React hooks](#53-dismiss-unecessary-react-hooks)
++ [6. Helper models](#6-helper-models)
+  + [6.1. Value](#61-value)
+  + [6.2. AsyncValue](#62-asyncvalue)
+  + [6.3. BoxedValue](#63-boxedvalue)
+  + [6.4. BoolValue](#64-boolvalue)
++ [Guides](#guides)
+  + [Working with class-based state](#working-with-class-based-state)
+    + [Scaffolding a new project](#scaffolding-a-new-project)
 
 
-##  1. <a name='Why'></a>Why
+##  1. Why
 
 React's ecosystem is a great place to be, so we do not want to leave it just because of how annoying `hooks`, state management and render performance tweaking is.
 
@@ -38,9 +33,9 @@ It solves the performance problems, but it also adds boilerplate but isn't quite
 
 This micro frameworks exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
 
-##  2. <a name='Howdoesitcompare'></a>How does it compare?
+##  2. How does it compare?
 
-###  2.1. <a name='Dropinreplacementforobserver'></a>Drop in replacement for `observer`
+###  2.1. Drop in replacement for `observer`
 
 ```tsx
 import { observer } from 'mobx-react-lite'
@@ -52,7 +47,7 @@ import { X } from '@n4s/xcomponent'
 const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
 ```
 
-###  2.2. <a name='Fullexamplecomparison'></a>Full example comparison
+###  2.2. Full example comparison
 
 ```tsx
 //
@@ -209,7 +204,7 @@ export function MyGlobalStateFn() {
 ```
 
 
-##  4. <a name='Stateshouldbedecoupledfromthecomponent'></a>State should be decoupled from the component
+##  4. State should be decoupled from the component
 
 State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
 
@@ -251,7 +246,7 @@ export const MyComponent = X((props: MyComponentProps) => {
 })
 ```
 
-###  4.1. <a name='Componentcompositionextender'></a>Component composition extender
+###  4.1. Component composition extender
 
 ```tsx
 //
@@ -309,7 +304,7 @@ Functional code can also suffer from the same issues, but it can be easier to re
 
 ###  5.2. <a name='Asacompositionalroottoolboxforyourproject'></a>As a compositional root toolbox for your project
 
-I *tentatively* posit the idea that we could encourage a single compositional root for all tools and generic components that are frequently used across a single project.
+I also posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a single project.
 
 You would re-export your own `X` to use throughout your projects state & components. Ideally no-where else, leave that to regular imports & conventions.
 
@@ -348,29 +343,34 @@ const MyComponent = X<{ someProp: number }>((props) => {
   const { api } = X.useRootState();
 
   const state = X.useState(() => class {
-    date = new X.SomeDateRelatedModel()
+    dateRange = new X.SomeDateRelatedModel()
 
-    orders = new X.AsyncValue(async ({ from, to }: { from: Date, to: Date}) =>
-      api.fetch(`/orders?from=${from.getTime()}&to=${to.getTime()}`)
+    orders = new X.AsyncValue(async () =>
+      api.fetch(`/orders?from=${this.dateRange.from.getTime()}&to=${this.dateRange.to.getTime()}`)
     )
 
-    get date() {
-      return X.dayjs(this.val.value).tz('America/New_York').format('YYYY-MM-DD')
+    get dateText() {
+      return X.dayjs(this.dateRange.from).tz('America/New_York').format('YYYY-MM-DD')
     }
   })
 
   // lets imagine we want to automatically fetch data
   // whenever the selected date range changes
   X.useReaction(
-    () => state.date.value,
-    () => state.orders.query(state.date.value),
-    { delay: 1000 }
+    () => state.dateRange.from,
+    () => state.orders.query(),
+    { delay: 2000 }
   )
 
-  // ... blah blah ...
-
-  return <div css={{ color: 'red' }}>
-    {/* ... do something here related to setting dates ... */}
+  return <div>
+    {/*
+      by passing the model in, we are letting the component set & read the value in a succinct way
+      and the props type definition for MyDateRangePicker need only be a subset, such as:
+      { from: Date, to: Date, set: (from: Date, to: Date) => void }
+      or to be even more lazy, use type SomeDateRelatedModel, thus making it coupled to that model.
+     */}
+    <MyDateRangePicker value={state.dateRange} />
+    <p>Selected date: {state.dateText}</p>
     {state.orders.isPending && 'Loading...'}
     {state.orders.error && <>{state.orders.error.message}</>}
     {state.orders.value?.map(({ user, time }) => <div>{time} {user.name}</div>)}
@@ -379,7 +379,7 @@ const MyComponent = X<{ someProp: number }>((props) => {
 ```
 
 
-###  5.3. <a name='DismissunecessaryReacthooks'></a>Dismiss unecessary React hooks
+###  5.3. Dismiss unecessary React hooks
 
 Moving logic to `mobx` allows for the majority of React state-related hooks to be dismissed. The nature of observables means that many of React's lifecycle hooks corrupt the state lifecycle, and should be avoided. We want to let `mobx` handle it.
 
@@ -400,9 +400,9 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
   - `useMemo` maybe?
   - etc.
 
-##  6. <a name='Helpermodels'></a>Helper models
+##  6. Helper models
 
-###  6.1. <a name='Value'></a>Value
+###  6.1. Value
 
 The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
 
@@ -420,7 +420,7 @@ selectedFruit.set('banana') // Valid
 selectedFruit.value // 'banana'
 ```
 
-###  6.2. <a name='AsyncValue'></a>AsyncValue
+###  6.2. AsyncValue
 
 Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
 
@@ -465,7 +465,7 @@ v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
 ```
 
 
-###  6.3. <a name='BoxedValue'></a>BoxedValue
+###  6.3. BoxedValue
 
 Very similar to `Value`, however, allows for the getter and setter to be defined seperately, and additionally encapsulates the observable value inside the closure.
 
@@ -495,7 +495,7 @@ somethingWrappedToOptimizeObservability.set('banana') // does nothing, because n
   
 ```
 
-###  6.4. <a name='BoolValue'></a>BoolValue
+###  6.4. BoolValue
 
 A `Value` that is specifically for boolean values. It has a few additional methods to make working with booleans easier.
 
@@ -527,87 +527,6 @@ const Example = X(() =>
 
 #### Scaffolding a new project
 
-```tsx
+Please check out this folder for a (currently WIP) full project structure example:
 
-// ./X.ts
-
-import { X as XComponent } from '@n4s/XComponent';
-import { useRootState } from './useRootState';
-
-export const X = XComponent.extend({
-  useRootState
-});
-
-// ./src/RootState.ts
-
-// 
-import { X } from '@/X'
-
-export class RootState {
-  router = new RouterState(() => this)
-  dataApi = new DataApiState(() => this)
-  authApi = new AuthApiState(() => this)
-}
-
-// ./src/RouterState.ts
-
-import { X } from '@/X'
-import { XRouter, XRoute } from 'xroute
-import { createBrowserHistory } from 'history
-
-export class RouterState {
-  router = new XRouter([
-    XRoute('home')
-      .Resource('/') // @example url: /
-      .Type<{
-        pathname: {},
-        search: { section?: string },
-      }>(),
-    XRoute('login').Resource('/login'), // @example url: /login
-    XRoute('logout').Resource('/logout'), // @example url: /logout
-    XRoute('profile')
-      .Resource('/profile/:userId')
-      .Type<{
-        pathname: { userId: string },
-        search: {},
-      }>(),
-    XRoute('app').Resource('/app'),
-    XRoute('notFound').Resource('*'),
-  ], createBrowserHistory())
-
-}
-
-// ./src/useRootState.ts
-
-import { useContext } from 'react'
-import { type RootState } from './RootState'
-
-export const RootStateContext = React.createContext<RootState>(null)
-export function useRootState() {
-  return useContext(RootStateContext)
-}
-
-// ./src/Root.tsx
-
-import { X } from '@/X'
-
-export const Root = X(() => {
-  const state = X.useState(() => new RootState())
-
-  return <RootStateContext.Provider value={state}>
-    <Routing />
-  </RootStateContext.Provider>
-})
-
-// ./src/Routing.tsx
-
-import { X } from '@/X'
-
-export const Routing = X(() => {
-  const { router } = X.useRootState()
-
-  return <Router>
-    <Route path="/home" component={Home} />
-    <Route path="/login" component={Login} />
-  </Router>
-})
+- [./src/stories/demoApp](./src/stories/demoApp)
