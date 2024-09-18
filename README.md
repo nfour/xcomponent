@@ -224,6 +224,8 @@ export const MyComponent = X<Props>((props) => {
     increment = () => this.count.set(this.count.value + 1)
   })
 
+  X.useProps(props, state.props) 
+  
   const ui = X.useState(() => class {
     // This will recompute whenever the below state observables change
     get infoList() {
@@ -245,7 +247,6 @@ export const MyComponent = X<Props>((props) => {
     }
   })
 
-  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
 
   return <>
     {ui.infoList}
