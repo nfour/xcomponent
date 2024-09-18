@@ -7,6 +7,7 @@ This is a micro framework that brings together MobX and React in order to solve 
   + [2.1. Drop in replacement for `observer`](#21-drop-in-replacement-for-observer)
   + [2.2. Full example comparison](#22-full-example-comparison)
   + [2.3. Extended example pattern](#23-extended-example-pattern)
+  + [2.4. Inline class based state with computed JSX](#24-inline-class-based-state-with-computed-jsx)
 + [3. Details of the API](#3-details-of-the-api)
 + [4. State should be decoupled from the component](#4-state-should-be-decoupled-from-the-component)
   + [4.1. Component composition extender](#41-component-composition-extender)
@@ -192,6 +193,64 @@ export const MyComponent = X<Props>((props) => {
     <button onClick={state.increment}>Incr</button>
   </>
 })
+```
+
+
+### 2.4. Inline class based state with computed JSX
+
+This is a little more on the crazy side, use this only as... Inspiration for now.
+Now lets create computed properties which return JSX.
+Note that in this pattern, this `ui` state class is actively coupled to the view - we aren't trying to decouple it, but rather to avoid useCallback/useMemo related hackery and to also avoid needing to create a new component for each computed property.
+
+It's mostly a convenience pattern, but it can be useful to organize your view logic in a performant way.
+
+I'm not totally sure if MobX does anything funny with JSX return values, so I'll have to do some benchmarks.
+
+```tsx
+
+import { X } from '@n4s/xcomponent'
+
+type Props = { someProp: number }
+
+export const MyComponent = X<Props>((props) => {
+  const state = X.useState(() => class {
+    props = new X.Value(props) // initialized with `props` only for type inferrence
+    count = new X.Value(0)
+
+    get combinedNumber() {
+      return this.count.value + this.props.value.someProp
+    }
+
+    increment = () => this.count.set(this.count.value + 1)
+  })
+
+  const ui = X.useState(() => class {
+    get infoList() {
+      // This will recompute whenever the below state observables change
+      return <ul>
+        <li>Count: {state.count.value}</li>
+        <li>Some prop: {state.props.value.someProp}</li>
+        <li>Combined number: {state.combinedNumber}</li>
+      </ul>
+    }
+    get incrButton() {
+      return <button onClick={state.increment}>Incr</button>
+    }
+
+    get bigNumberMessage() {
+      return state.combinedNumber > 10 && <div>Wow, that's a big number!</div>
+    }
+  })
+
+  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
+
+  return <>
+    {ui.infoList}
+    {ui.incrButton}
+    {ui.bigNumberMessage}
+  </>
+})
+
 ```
 
 ##  3. Details of the API
