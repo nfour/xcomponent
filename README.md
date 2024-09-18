@@ -6,6 +6,7 @@ This is a micro framework that brings together MobX and React in order to solve 
 + [2. How does it compare?](#2-how-does-it-compare)
   + [2.1. Drop in replacement for `observer`](#21-drop-in-replacement-for-observer)
   + [2.2. Full example comparison](#22-full-example-comparison)
+  + [2.3. Extended example pattern](#23-extended-example-pattern)
 + [3. Details of the API](#3-details-of-the-api)
 + [4. State should be decoupled from the component](#4-state-should-be-decoupled-from-the-component)
   + [4.1. Component composition extender](#41-component-composition-extender)
@@ -27,11 +28,11 @@ This is a micro framework that brings together MobX and React in order to solve 
 
 React's ecosystem is a great place to be, so we do not want to leave it just because of how annoying `hooks`, state management and render performance tweaking is.
 
-So we use an observable solution, like mobx.
+So we use an signals/observables solution, like mobx.
 
-It solves the performance problems, but it also adds boilerplate but isn't quite interoperable with React state & props. There is no "correct" convention either, so your team is left to "figure it out" on each new project.
+It solves the performance problems, but it also adds boilerplate and isn't cleanly interoperable with React's lifecycle. There is also no "correct" convention, so your team is left to "figure it out" on each new project, which further deteriorates consistency.
 
-This micro frameworks exists to define a convention while being simple enough to review or copy paste parts of it into your own project as desired.
+This is a micro framework which exists to define a convention while also being simple enough to review or copy paste parts of it into your own project as desired.
 
 ##  2. How does it compare?
 
@@ -40,11 +41,11 @@ This micro frameworks exists to define a convention while being simple enough to
 ```tsx
 import { observer } from 'mobx-react-lite'
 
-const MyComponent = observer<{ someProp: number }>((props) => <>{props.someProp}</>)
+const MyComponent = observer((props: { someProp: number }) => <>{props.someProp}</>)
 
 import { X } from '@n4s/xcomponent'
 
-const MyComponent = X<{ someProp: number }>((props) => <>{props.someProp}</>)
+const MyComponent = X((props: { someProp: number }) => <>{props.someProp}</>)
 ```
 
 ###  2.2. Full example comparison
@@ -129,7 +130,71 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 })
 ```
 
-##  3. <a name='DetailsoftheAPI'></a>Details of the API
+You'll notice first off a few things:
+- Far less boilerplate
+- Specific hooks for specific lifecycles
+- Props are made and kept observable
+  - Instead of using complicated `useEffect` to sync props with state, we use `X.useProps`
+  - Then you can use `X.useReaction` or `X.useAutorun` to react to specific prop changes, just like any other observable, anywhere you want to, not just within a react hook.
+
+
+### 2.3. Extended example pattern
+
+Want to emulate Vue's `setup()` pattern?
+
+```tsx
+
+import { X } from '@n4s/xcomponent'
+
+type Props = { someProp: number }
+
+// By making this another function we have nicely seperated concerns
+// And we can make additional hooks calls/lifecycle management which is all state-related
+// So that we do not pollute the view component with state management
+const useMyComponentState = (props: Props) => {
+  const state = X.useState(() => class {
+    props = new X.Value(props) // initialized with `props` only for type inferrence
+    count = new X.Value(0)
+
+    get combinedNumber() {
+      return this.count.value + this.props.value.someProp
+    }
+
+    increment = () => this.count.set(this.count.value + 1)
+  })
+
+  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
+  X.useOnMounted(() => { console.log('mounted, do some setup') })
+  X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
+
+  // This is a custom hook that will run whenever `state.count` changes
+  X.useReaction(
+    () => state.count,
+    () => console.log('count changed to', state.count.value)
+  )
+
+  // This is a custom hook that will run whenever `props.someProp` changes
+  X.useReaction(
+    () => state.props.value.someProp,
+    () => console.log('someProp changed to', state.props.value.someProp)
+  )
+
+  return state
+}
+
+export const MyComponent = X<Props>((props) => {
+  const state = useMyComponentState(props)
+  
+  return <>
+    <div>{props.someProp}</div>
+    <div>{state.count.value}</div>
+    <div>{state.combinedNumber}</div>
+    <button onClick={state.increment}>Incr</button>
+  </>
+})
+```
+
+##  3. Details of the API
 
 You can use a class based styled (my preference currently!), or a functional style.
 
