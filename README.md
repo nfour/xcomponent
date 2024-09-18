@@ -206,6 +206,11 @@ It's mostly a convenience pattern, but it can be useful to organize your view lo
 
 I'm not totally sure if MobX does anything funny with JSX return values, or if memory usage becomes an issue here, so I'll have to do some benchmarks.
 
+- https://github.com/mobxjs/mobx/issues/485
+  - This thread posits that there is a performance improvement
+  - The performance isn't huge because basically react is slow anyway
+  - Likely not harmful
+
 ```tsx
 
 import { X } from '@n4s/xcomponent'
@@ -225,7 +230,7 @@ export const MyComponent = X<Props>((props) => {
   })
 
   X.useProps(props, state.props) 
-  
+
   const ui = X.useState(() => class {
     // This will recompute whenever the below state observables change
     get infoList() {
