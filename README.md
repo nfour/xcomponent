@@ -204,7 +204,7 @@ Note that in this pattern, this `ui` state class is actively coupled to the view
 
 It's mostly a convenience pattern, but it can be useful to organize your view logic in a performant way.
 
-I'm not totally sure if MobX does anything funny with JSX return values, so I'll have to do some benchmarks.
+I'm not totally sure if MobX does anything funny with JSX return values, or if memory usage becomes an issue here, so I'll have to do some benchmarks.
 
 ```tsx
 
@@ -225,18 +225,21 @@ export const MyComponent = X<Props>((props) => {
   })
 
   const ui = X.useState(() => class {
+    // This will recompute whenever the below state observables change
     get infoList() {
-      // This will recompute whenever the below state observables change
       return <ul>
         <li>Count: {state.count.value}</li>
         <li>Some prop: {state.props.value.someProp}</li>
         <li>Combined number: {state.combinedNumber}</li>
       </ul>
     }
+
+    // In theory this should never recompute
     get incrButton() {
       return <button onClick={state.increment}>Incr</button>
     }
 
+    // Should recompute if state.combinedNumber changes
     get bigNumberMessage() {
       return state.combinedNumber > 10 && <div>Wow, that's a big number!</div>
     }
