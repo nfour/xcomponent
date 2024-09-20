@@ -90,22 +90,19 @@ export function useProps<
   V extends { value: Record<string, any> } | Record<string, any>,
 >(props: P, store: V) {
   useEffect(() => {
+    const isValueWrapper =
+      'value' in store && 'set' in store && store.set instanceof Function;
+
+    const storeValue = isValueWrapper ? store.value : store;
     const onlyChangedProperties = Object.fromEntries(
-      Object.entries(props).filter(
-        ([key, value]) => store.value[key] !== value,
-      ),
+      Object.entries(props).filter(([key, value]) => storeValue[key] !== value),
     );
 
     if (!Object.keys(onlyChangedProperties).length) return;
 
-    const isValueWrapper =
-      'value' in store && 'set' in store && store.set instanceof Function;
-
     // Should this be a recursive deep merge to further preserve observability?
     // Or do we just allow the user to annotate observable.structural?
     runInAction(() => {
-      const storeValue = isValueWrapper ? store.value : store;
-
       Object.assign(storeValue, onlyChangedProperties);
     });
   }, [props]);
