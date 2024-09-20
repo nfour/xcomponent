@@ -59,7 +59,9 @@ export const useState = <C extends typeof ClassType | object>(
   })[0] as C extends typeof ClassType ? InstanceType<C> : C;
 
 export const useOnMounted = (fn: () => any) => {
-  useEffect(() => fn(), []);
+  useEffect(() => {
+    fn();
+  }, []);
 };
 
 export const useOnUnmounted = (fn: () => void) => {
@@ -74,13 +76,19 @@ export const useOnReaction = (
   else return useReaction(inputs[0], inputs[1], inputs[2]);
 };
 
-export const useProps = <
+export function useProps<
   P extends Record<string, any>,
-  V extends { value: Record<string, any> },
->(
-  props: P,
-  store: V,
-) => {
+  V extends { value: Record<string, any>; set: (v: any) => any },
+>(props: P, store: V): void;
+export function useProps<
+  P extends Record<string, any>,
+  V extends Record<string, any>,
+>(props: P, store: V): void;
+
+export function useProps<
+  P extends Record<string, any>,
+  V extends { value: Record<string, any> } | Record<string, any>,
+>(props: P, store: V) {
   useEffect(() => {
     const onlyChangedProperties = Object.fromEntries(
       Object.entries(props).filter(
@@ -90,10 +98,15 @@ export const useProps = <
 
     if (!Object.keys(onlyChangedProperties).length) return;
 
+    const isValueWrapper =
+      'value' in store && 'set' in store && store.set instanceof Function;
+
     // Should this be a recursive deep merge to further preserve observability?
     // Or do we just allow the user to annotate observable.structural?
     runInAction(() => {
-      Object.assign(store.value, onlyChangedProperties);
+      const storeValue = isValueWrapper ? store.value : store;
+
+      Object.assign(storeValue, onlyChangedProperties);
     });
   }, [props]);
-};
+}
