@@ -24,7 +24,6 @@ This is a micro framework that brings together MobX and React in order to solve 
   + [Working with class-based state](#working-with-class-based-state)
     + [Scaffolding a new project](#scaffolding-a-new-project)
 
-
 ##  1. Why
 
 React's ecosystem is a great place to be, so we do not want to leave it just because of how annoying `hooks`, state management and render performance tweaking is.
@@ -108,7 +107,7 @@ import { X } from '@n4s/xcomponent'
 
 export const MyComponent = X<{ someProp: number }>((props) => {
   const state = X.useState(() => class {
-    props = new X.Value(props) // initialized with `props` only for type inferrence
+    props = props
     count = new X.Value(0)
 
     get combinedNumber() {
@@ -118,7 +117,7 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     increment = () => this.count.set(this.count.value + 1)
   })
 
-  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
+  X.useProps(props, state.props) // Syncs prop changes with state.props
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
 
@@ -154,7 +153,7 @@ type Props = { someProp: number }
 // So that we do not pollute the view component with state management
 const useMyComponentState = (props: Props) => {
   const state = X.useState(() => class {
-    props = new X.Value(props) // initialized with `props` only for type inferrence
+    props = props
     count = new X.Value(0)
 
     get combinedNumber() {
@@ -164,7 +163,7 @@ const useMyComponentState = (props: Props) => {
     increment = () => this.count.set(this.count.value + 1)
   })
 
-  X.useProps(props, state.props) // Syncs prop changes with state.props efficiently
+  X.useProps(props, state.props)
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
 
@@ -219,7 +218,7 @@ type Props = { someProp: number }
 
 export const MyComponent = X<Props>((props) => {
   const state = X.useState(() => class {
-    props = new X.Value(props) // initialized with `props` only for type inferrence
+    props = props 
     count = new X.Value(0)
 
     get combinedNumber() {
@@ -348,7 +347,7 @@ In this example the state lives in another file, and the component is just a vie
 import { X } from '@n4s/xcomponent'
 
 export class MyComponentState {
-  props = new X.Value({ someProp: 0 }) // Here we store the component's props, but observable
+  props = { someProp: 0 } // Init the props with some default value for observability & type inference
   count = new X.Value(0)
 
   get combinedNumber() {
@@ -421,9 +420,9 @@ const Example = () =>
   </Dialog>
 ```
 
-##  5. <a name='ConventionsPhilosophy'></a>Conventions / Philosophy
+##  5. Conventions / Philosophy
 
-###  5.1. <a name='Useeitherclassorfunctionsyntaxconsistentlyforallstate'></a>Use either `class` or `function` syntax consistently for all state
+###  5.1. Use either `class` or `function` syntax consistently for all state
 
 Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state.
 
@@ -435,7 +434,7 @@ Classes also double up as a type interface. The key issue people find with class
 
 Functional code can also suffer from the same issues, but it can be easier to refactor and move around. That flexibility can be a double edged sword, however.
 
-###  5.2. <a name='Asacompositionalroottoolboxforyourproject'></a>As a compositional root toolbox for your project
+###  5.2. As a compositional root toolbox for your project
 
 I also posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a single project.
 
