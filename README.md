@@ -111,7 +111,7 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     count = new X.Value(0)
 
     get combinedNumber() {
-      return this.count.value + this.props.value.someProp
+      return this.count.value + this.props.someProp
     }
 
     increment = () => this.count.set(this.count.value + 1)
@@ -120,6 +120,33 @@ export const MyComponent = X<{ someProp: number }>((props) => {
   X.useProps(props, state.props) // Syncs prop changes with state.props
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
+
+  return <>
+    <div>{props.someProp}</div>
+    <div>{state.count.value}</div>
+    <div>{state.combinedNumber}</div>
+    <button onClick={state.increment}>Incr</button>
+  </>
+})
+
+//
+// OR EVEN TERSER
+//
+
+// Can avoid needing to use X.useProps() by making props reactive before passing them to the component
+const X = xcomponent.configure({ observableProps: true })
+
+export const MyComponent = X<{ someProp: number }>((props) => {
+  const state = X.useState(() => class {
+    count = new X.Value(0)
+
+    get combinedNumber() {
+      // props are reactive now, as long as you access them through `props`
+      return this.count.value + props.someProp
+    }
+
+    increment = () => this.count.set(this.count.value + 1)
+  })
 
   return <>
     <div>{props.someProp}</div>
