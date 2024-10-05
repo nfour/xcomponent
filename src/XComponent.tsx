@@ -74,10 +74,11 @@ export const xcomponent = <PROPS extends {}>(
         const store = useState(
           () =>
             class {
-              props = props;
+              props = { ...props };
             },
         );
 
+        console.log('dbg', Fn.name);
         useProps(props, store.props);
 
         return Fn(store.props);
@@ -122,17 +123,21 @@ xcomponent.BoxedValue = BoxedValue;
  * export const X = xcomponent.configure({ observableProps: true })
  */
 xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) => {
+  // todo: convert the whole thing to a class so we can re-instance it with new config easily.
+  // atm this is failing for some reason... and weird type stuff occurs - cus attached methods do not reference
+  // correct instances
+
   const newXcomponent = (
     fn: Parameters<typeof xcomponent>[0],
-    configOverride?: Partial<Parameters<typeof xcomponent>[1]>,
+    configOverride: Partial<Parameters<typeof xcomponent>[1]> = {},
   ) => xcomponent(fn, { ...config, ...configOverride });
 
   Object.assign(newXcomponent, xcomponent);
 
+  newXcomponent.extend = (p: {}) => Object.assign(newXcomponent, p);
+
   return newXcomponent as typeof xcomponent;
 };
-
-xcomponent.configure({ observableProps: true }).AsyncValue;
 
 xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);

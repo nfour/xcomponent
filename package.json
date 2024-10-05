@@ -8,6 +8,9 @@
     "build": "pnpm build:clean; pnpm build:cjs; pnpm build:mjs;",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:mjs": "tsc -p tsconfig.mjs.json",
+    "build:cjs:watch": "tsc -p tsconfig.cjs.json --watch",
+    "build:mjs:watch": "tsc -p tsconfig.mjs.json --watch",
+    "build:watch": "pnpm build:clean; pnpm run '/(cjs|mjs):watch$/'",
     "build:clean": "rm -rf ./x/*",
     "test": "vitest"
   },
@@ -20,7 +23,7 @@
       "require": "./x/cjs/index.js"
     },
     "./*": {
-      "import": "./x/esm/*.js",
+      "import": "./x/mjs/*.js",
       "require": "./x/cjs/*.js"
     }
   },
