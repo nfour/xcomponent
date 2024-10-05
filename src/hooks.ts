@@ -4,9 +4,9 @@ import {
   comparer,
   makeAutoObservable,
   isObservable,
-  runInAction,
 } from 'mobx';
 import { useEffect, useState as useReactState } from 'react';
+import microdiff from 'microdiff';
 
 export const useReaction: typeof reaction = (fn1, fn2, opts): any => {
   useEffect(
@@ -76,34 +76,30 @@ export const useOnReaction = (
   else return useReaction(inputs[0], inputs[1], inputs[2]);
 };
 
+export function useProps<P extends Record<string, any>, V extends P>(
+  props: P,
+  store: V,
+): void;
 export function useProps<
   P extends Record<string, any>,
-  V extends { value: Record<string, any>; set: (v: any) => any },
->(props: P, store: V): void;
-export function useProps<
-  P extends Record<string, any>,
-  V extends Record<string, any>,
+  V extends (v: P) => void,
 >(props: P, store: V): void;
 
 export function useProps<
   P extends Record<string, any>,
-  V extends { value: Record<string, any> } | Record<string, any>,
+  V extends P | ((v: P) => void),
 >(props: P, store: V) {
   useEffect(() => {
-    const isValueWrapper =
-      'value' in store && 'set' in store && store.set instanceof Function;
+    // runInAction(() => {
+    if (typeof store === 'function') return store(props);
 
-    const storeValue = isValueWrapper ? store.value : store;
-    const onlyChangedProperties = Object.fromEntries(
-      Object.entries(props).filter(([key, value]) => storeValue[key] !== value),
-    );
+    const diff = microdiff(store, props);
 
-    if (!Object.keys(onlyChangedProperties).length) return;
+    console.log({ diff });
 
-    // Should this be a recursive deep merge to further preserve observability?
-    // Or do we just allow the user to annotate observable.structural?
-    runInAction(() => {
-      Object.assign(storeValue, onlyChangedProperties);
-    });
+    if (diff.length === 0) return;
+
+    Object.assign(store, props);
+    // });
   }, [props]);
 }

@@ -8,4 +8,7 @@ export default defineConfig({
       include: ['**/*.tsx', '**/*.ts'],
     }),
   ],
+  preview: {
+    open: false,
+  },
 });
