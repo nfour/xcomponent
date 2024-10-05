@@ -125,11 +125,16 @@ xcomponent.BoxedValue = BoxedValue;
  *
  * export const X = xcomponent.configure({ observableProps: true })
  */
-xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) =>
-  ((
+xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) => {
+  const newXcomponent = ((
     fn: Parameters<typeof xcomponent>[0],
     configOverride?: Partial<Parameters<typeof xcomponent>[1]>,
   ) => xcomponent(fn, { ...config, ...configOverride })) as typeof xcomponent;
+
+  Object.assign(newXcomponent, xcomponent);
+
+  return newXcomponent;
+};
 
 xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);
