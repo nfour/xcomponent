@@ -126,15 +126,17 @@ xcomponent.BoxedValue = BoxedValue;
  * export const X = xcomponent.configure({ observableProps: true })
  */
 xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) => {
-  const newXcomponent = ((
+  const newXcomponent = (
     fn: Parameters<typeof xcomponent>[0],
     configOverride?: Partial<Parameters<typeof xcomponent>[1]>,
-  ) => xcomponent(fn, { ...config, ...configOverride })) as typeof xcomponent;
+  ) => xcomponent(fn, { ...config, ...configOverride });
 
   Object.assign(newXcomponent, xcomponent);
 
-  return newXcomponent;
+  return newXcomponent as typeof xcomponent;
 };
+
+xcomponent.configure({ observableProps: true }).AsyncValue;
 
 xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);
