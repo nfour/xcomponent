@@ -78,7 +78,6 @@ export const xcomponent = <PROPS extends {}>(
             },
         );
 
-        console.log('dbg', Fn.name);
         useProps(props, store.props);
 
         return Fn(store.props);
