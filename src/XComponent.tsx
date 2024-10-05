@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import {
   useAutorun,
   useOnMounted,
@@ -75,14 +75,10 @@ export const xcomponent = <PROPS extends {}>(
           () =>
             class {
               props = props;
-              // TODO: could this be smarter, and only update the props that have changed?
-              set = (p: PROPS) => Object.assign(this.props, p);
             },
         );
 
-        useEffect(() => {
-          store.set(props);
-        }, [props]);
+        useProps(props, store.props);
 
         return Fn(store.props);
       };
