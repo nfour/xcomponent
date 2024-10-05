@@ -63,6 +63,8 @@
     "react-dom": ">= 18"
   },
   "dependencies": {
-    "microdiff": "^1.4.0"
+    "lodash-es": "^4.17.21",
+    "microdiff": "^1.4.0",
+    "remeda": "^2.14.0"
   }
 }

@@ -8,9 +8,8 @@ import {
   useReaction,
   useState,
 } from './hooks';
-import { AsyncValue, BoolValue, Value, BoxedValue } from './mobx';
+import { AsyncValue, BoolValue, BoxedValue, Value } from './mobx';
 import { setComponentNameForDebugging } from './utils';
-import { makeObservable, observable, untracked } from 'mobx';
 
 /**
  * A `observer` wrapped component with type support for static props
@@ -34,14 +33,29 @@ export const xcomponent = <PROPS extends {}>(
   Fn: (p: { className?: string } & PROPS) => ReactNode,
   {
     setDisplayName = true,
-    observableProps = true,
+    observableProps = false,
   }: {
     /** @default true
      * Set the displayName of the component to the file and line number for easer debugging
      */
     setDisplayName?: boolean;
 
-    /** Wraps props in makeAutoObservable in order to make them reactive */
+    /**
+     * Ensures props are made observable and synchronized, so they may be accessed within stores
+     *
+     * @default false
+     * @example
+     *
+     * const Component = X<{ prop1: number }>((props) => {
+     *  const state = X.useState(() => ({
+     *    // It's automatically reactive!
+     *    get double() { return props.prop1 * 2 }
+     *  }))
+     *
+     *  return <>{state.double}</>
+     * }
+     *
+     * */
     observableProps?: boolean;
   } = {},
 ) => {
@@ -57,20 +71,17 @@ export const xcomponent = <PROPS extends {}>(
       if (!observableProps) return Fn;
 
       return (props: PROPS) => {
-        const store = useState(() => {
-          return makeObservable({ props }, { props: observable.deep });
-        });
+        const store = useState(
+          () =>
+            class {
+              props = props;
+              // TODO: could this be smarter, and only update the props that have changed?
+              set = (p: PROPS) => Object.assign(this.props, p);
+            },
+        );
 
         useEffect(() => {
-          untracked(() => {
-            if (store.props === null) {
-              store.props = props;
-
-              return;
-            }
-
-            Object.assign(store.props, props);
-          });
+          store.set(props);
         }, [props]);
 
         return Fn(store.props);
@@ -106,7 +117,21 @@ xcomponent.AsyncValue = AsyncValue;
 xcomponent.BoolValue = BoolValue;
 xcomponent.BoxedValue = BoxedValue;
 
+/**
+ * Configures a new xcomponent function with a new *default* configuration
+ *
+ * @example
+ * import { xcomponent } from '@n4s/xcomponent';
+ *
+ * export const X = xcomponent.configure({ observableProps: true })
+ */
+xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) =>
+  ((
+    fn: Parameters<typeof xcomponent>[0],
+    configOverride?: Partial<Parameters<typeof xcomponent>[1]>,
+  ) => xcomponent(fn, { ...config, ...configOverride })) as typeof xcomponent;
+
 xcomponent.extend = <P extends object>(members: P): typeof xcomponent & P =>
   Object.assign(xcomponent, members);
 
-export { xcomponent as X, xcomponent as default };
+export { xcomponent as default, xcomponent as X };

@@ -4,9 +4,10 @@ import {
   comparer,
   makeAutoObservable,
   isObservable,
+  runInAction,
 } from 'mobx';
 import { useEffect, useState as useReactState } from 'react';
-import microdiff from 'microdiff';
+import { isDeepEqual } from 'remeda';
 
 export const useReaction: typeof reaction = (fn1, fn2, opts): any => {
   useEffect(
@@ -85,21 +86,17 @@ export function useProps<
   V extends (v: P) => void,
 >(props: P, store: V): void;
 
-export function useProps<
-  P extends Record<string, any>,
-  V extends P | ((v: P) => void),
->(props: P, store: V) {
+export function useProps<P extends Record<string, any>>(
+  props: P,
+  store: P | ((v: P) => void),
+) {
   useEffect(() => {
-    // runInAction(() => {
-    if (typeof store === 'function') return store(props);
+    runInAction(() => {
+      if (typeof store === 'function') return store(props);
 
-    const diff = microdiff(store, props);
+      if (isDeepEqual(store, props)) return;
 
-    console.log({ diff });
-
-    if (diff.length === 0) return;
-
-    Object.assign(store, props);
-    // });
+      Object.assign(store, props);
+    });
   }, [props]);
 }

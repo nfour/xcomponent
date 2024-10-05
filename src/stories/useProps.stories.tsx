@@ -40,7 +40,7 @@ const ComponentThatTakesNestedReactiveProps = X<{
   );
 });
 
-const ComponentThatTakesNestedReactivePropsButDoesntDestructure = X<{
+const ComponentThatTakesNestedReactivePropsLessBad = X<{
   val: number;
   nested: {
     val: number;
@@ -50,29 +50,27 @@ const ComponentThatTakesNestedReactivePropsButDoesntDestructure = X<{
   const state = X.useState(
     () =>
       class {
-        // // syncedPropsModel = {}
-        // props = props;
+        // syncedPropsModel = {}
+        props = props;
 
         get computedVal() {
-          console.log('computedNestedVal');
-
-          return props.val * 2;
+          return this.props.val * 2;
         }
 
         get computedNestedVal() {
-          return props.nested.val * 2;
+          return this.props.nested.val * 2;
         }
       },
   );
 
-  console.log('render', props);
-
   // We are testing that the first object, which is created every render, does not cause a stack overflow
-  // X.useProps(props, state.props);
+  X.useProps(props, state.props);
+
+  console.log(props, state.props);
 
   return (
     <>
-      {state.computedVal} {state.computedNestedVal} {props.nested.jsx}
+      {state.computedVal} {state.computedNestedVal} {state.props.nested.jsx}
     </>
   );
 });
@@ -92,7 +90,7 @@ export const TestUseProps = X(() => {
   X.useOnUnmounted(() => clearInterval(state.timer));
 
   return (
-    <ComponentThatTakesNestedReactivePropsButDoesntDestructure
+    <ComponentThatTakesNestedReactivePropsLessBad
       nested={{
         jsx: <>Hi</>,
         val: state.v * 2,
