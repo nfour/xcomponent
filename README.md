@@ -133,6 +133,9 @@ export const MyComponent = X<{ someProp: number }>((props) => {
 // OR EVEN TERSER
 //
 
+//
+// EXPERIMENTAL. Currently this is UNOPTIMIZED and may cause unecessary re-renders. I am not smart enough to figure out how to optimize this yet :)
+//
 // Can avoid needing to use X.useProps() by making props reactive before passing them to the component
 const X = xcomponent.configure({ observableProps: true })
 
@@ -141,12 +144,14 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     count = new X.Value(0)
 
     get combinedNumber() {
-      // props are reactive now, as long as you access them through `props`
+      // props are reactive now, as long as you access them through `props.`
       return this.count.value + props.someProp
     }
 
     increment = () => this.count.set(this.count.value + 1)
   })
+
+  // No need to use X.useProps(props, state.props) here.
 
   return <>
     <div>{props.someProp}</div>
@@ -155,6 +160,28 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     <button onClick={state.increment}>Incr</button>
   </>
 })
+
+/**
+ * Further brainstorming:
+ * Might be better to sync props via X.useState() instead, so that internally I do not need to create an additional HOC to make props reactive.
+ * 
+ * @example 
+ * 
+ * Such as: 
+ * ```tsx
+ * const X = xcomponent.configure({ observableProps: true })
+ * 
+ * export const MyComponent = X<{ someProp: number }>((reactProps) => {
+ *  const state = X.useState((myReactiveProps) => class {
+ *    get someProp() { return myReactiveProps.someProp }
+ *  }, reactProps)
+ * 
+ *  return null
+ * })
+ * ```
+ * 
+ **/
+
 ```
 
 You'll notice first off a few things:

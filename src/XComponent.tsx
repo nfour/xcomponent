@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
   useAutorun,
   useOnMounted,
@@ -10,6 +10,7 @@ import {
 } from './hooks';
 import { AsyncValue, BoolValue, BoxedValue, Value } from './mobx';
 import { setComponentNameForDebugging } from './utils';
+import { makeObservable, observable, runInAction } from 'mobx';
 
 /**
  * A `observer` wrapped component with type support for static props
@@ -74,11 +75,44 @@ export const xcomponent = <PROPS extends {}>(
         const store = useState(
           () =>
             class {
-              props = { ...props };
+              constructor() {
+                makeObservable(this, {
+                  props: observable.deep,
+                });
+              }
+
+              props = props;
             },
         );
 
-        useProps(props, store.props);
+        useEffect(() => {
+          runInAction(() => {
+            // object assign, but only when props[key] are not equal to store.props[key]
+            // should we do this recursively but ignore isObseravable?
+            // probably best to use a deepmerge fn with custom consolidation
+
+            for (const key in props) {
+              // Skip if same
+              if (
+                key in props &&
+                key in store.props &&
+                props[key] === store.props[key]
+              ) {
+                continue;
+              }
+
+              // Remove if not in props
+              if (key in store.props && !(key in props)) {
+                store.props[key] = undefined as any;
+                continue;
+              }
+
+              store.props[key] = props[key];
+            }
+          });
+        }, [props]);
+
+        // useProps(props, store.props);
 
         return Fn(store.props);
       };
@@ -126,6 +160,7 @@ xcomponent.configure = (config: Parameters<typeof xcomponent>[1]) => {
   // atm this is failing for some reason... and weird type stuff occurs - cus attached methods do not reference
   // correct instances
 
+  // TODO: the error stack is off due to this, we should probably just use a class and re-instance it properly
   const newXcomponent = (
     fn: Parameters<typeof xcomponent>[0],
     configOverride: Partial<Parameters<typeof xcomponent>[1]> = {},
