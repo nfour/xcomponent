@@ -180,6 +180,8 @@ export const MyComponent = X<{ someProp: number }>((props) => {
  * })
  * ```
  * 
+ * Essentially X.useState would create an additional store for the props, and then sync them with the props passed in on each render. One could also pass in options to configure makeObservable for the props store to refine it.
+ * So, like using X.useProps(reactProps, state.myReactiveProps) but without needing to do it manually and pollute your class instance with it.
  **/
 
 ```
