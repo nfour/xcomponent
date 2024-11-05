@@ -9,12 +9,9 @@ This is a micro framework that brings together MobX and React in order to solve 
   + [2.3. Extended example pattern](#23-extended-example-pattern)
   + [2.4. Inline class based state with computed JSX](#24-inline-class-based-state-with-computed-jsx)
 + [3. Details of the API](#3-details-of-the-api)
-+ [4. State should be decoupled from the component](#4-state-should-be-decoupled-from-the-component)
++ [4. State can be decoupled from the component](#4-state-can-be-decoupled-from-the-component)
   + [4.1. Component composition extender](#41-component-composition-extender)
-+ [5. Conventions / Philosophy](#5-conventions--philosophy)
-  + [5.1. Use either `class` or `function` syntax consistently for all state](#51-use-either-class-or-function-syntax-consistently-for-all-state)
-  + [5.2. As a compositional root toolbox for your project](#52-as-a-compositional-root-toolbox-for-your-project)
-  + [5.3. Dismiss unecessary React hooks](#53-dismiss-unecessary-react-hooks)
++ [5. Dismiss unecessary React hooks](#5-dismiss-unecessary-react-hooks)
 + [6. Helper models](#6-helper-models)
   + [6.1. Value](#61-value)
   + [6.2. AsyncValue](#62-asyncvalue)
@@ -40,11 +37,9 @@ This is a micro framework which exists to define a convention while also being s
 
 ```tsx
 import { observer } from 'mobx-react-lite'
-
 const MyComponent = observer((props: { someProp: number }) => <>{props.someProp}</>)
 
 import { X } from '@n4s/xcomponent'
-
 const MyComponent = X((props: { someProp: number }) => <>{props.someProp}</>)
 ```
 
@@ -106,18 +101,16 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
 import { X } from '@n4s/xcomponent'
 
 export const MyComponent = X<{ someProp: number }>((props) => {
-  const state = X.useState(() => class {
-    props = props
+  const state = X.useState(props, (props) => class {
     count = new X.Value(0)
 
     get combinedNumber() {
-      return this.count.value + this.props.someProp
+      return this.count.value + props.someProp // must access props through `props.` for reactivity
     }
 
     increment = () => this.count.set(this.count.value + 1)
   })
 
-  X.useProps(props, state.props) // Syncs prop changes with state.props
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
 
@@ -128,69 +121,13 @@ export const MyComponent = X<{ someProp: number }>((props) => {
     <button onClick={state.increment}>Incr</button>
   </>
 })
-
-//
-// OR EVEN TERSER
-//
-
-//
-// EXPERIMENTAL. Currently this is UNOPTIMIZED and may cause unecessary re-renders. I am not smart enough to figure out how to optimize this yet :)
-//
-// Can avoid needing to use X.useProps() by making props reactive before passing them to the component
-const X = xcomponent.configure({ observableProps: true })
-
-export const MyComponent = X<{ someProp: number }>((props) => {
-  const state = X.useState(() => class {
-    count = new X.Value(0)
-
-    get combinedNumber() {
-      // props are reactive now, as long as you access them through `props.`
-      return this.count.value + props.someProp
-    }
-
-    increment = () => this.count.set(this.count.value + 1)
-  })
-
-  // No need to use X.useProps(props, state.props) here.
-
-  return <>
-    <div>{props.someProp}</div>
-    <div>{state.count.value}</div>
-    <div>{state.combinedNumber}</div>
-    <button onClick={state.increment}>Incr</button>
-  </>
-})
-
-/**
- * Further brainstorming:
- * Might be better to sync props via X.useState() instead, so that internally I do not need to create an additional HOC to make props reactive.
- * 
- * @example 
- * 
- * Such as: 
- * ```tsx
- * const X = xcomponent.configure({ observableProps: true })
- * 
- * export const MyComponent = X<{ someProp: number }>((reactProps) => {
- *  const state = X.useState((myReactiveProps) => class {
- *    get someProp() { return myReactiveProps.someProp }
- *  }, reactProps)
- * 
- *  return null
- * })
- * ```
- * 
- * Essentially X.useState would create an additional store for the props, and then sync them with the props passed in on each render. One could also pass in options to configure makeObservable for the props store to refine it.
- * So, like using X.useProps(reactProps, state.myReactiveProps) but without needing to do it manually and pollute your class instance with it.
- **/
-
 ```
 
 You'll notice first off a few things:
 - Far less boilerplate
 - Specific hooks for specific lifecycles
 - Props are made and kept observable
-  - Instead of using complicated `useEffect` to sync props with state, we use `X.useProps`
+  - Instead of using complicated `useEffect` to sync props with state, props are stored in a store and updated on each render based on a diff algo
   - Then you can use `X.useReaction` or `X.useAutorun` to react to specific prop changes, just like any other observable, anywhere you want to, not just within a react hook.
 
 
@@ -208,18 +145,17 @@ type Props = { someProp: number }
 // And we can make additional hooks calls/lifecycle management which is all state-related
 // So that we do not pollute the view component with state management
 const useMyComponentState = (props: Props) => {
-  const state = X.useState(() => class {
-    props = props
+  const state = X.useState(props, (props) => class {
+    props = props // So that we can react to prop changes in our reactions below
     count = new X.Value(0)
 
     get combinedNumber() {
-      return this.count.value + this.props.value.someProp
+      return this.count.value + props.value.someProp
     }
 
     increment = () => this.count.set(this.count.value + 1)
   })
 
-  X.useProps(props, state.props)
   X.useOnMounted(() => { console.log('mounted, do some setup') })
   X.useOnUnmounted(() => { console.log('unmounted, do some cleanup') })
 
@@ -273,8 +209,8 @@ import { X } from '@n4s/xcomponent'
 type Props = { someProp: number }
 
 export const MyComponent = X<Props>((props) => {
-  const state = X.useState(() => class {
-    props = props 
+  const state = X.useState(props, (props) => class {
+    props = props // Store it so we can use it in other reactive contexts
     count = new X.Value(0)
 
     get combinedNumber() {
@@ -284,14 +220,13 @@ export const MyComponent = X<Props>((props) => {
     increment = () => this.count.set(this.count.value + 1)
   })
 
-  X.useProps(props, state.props) 
-
+  // This ui state accesses props via `state.props`, so doesn't need to be passed props
   const ui = X.useState(() => class {
     // This will recompute whenever the below state observables change
     get infoList() {
       return <ul>
         <li>Count: {state.count.value}</li>
-        <li>Some prop: {state.props.value.someProp}</li>
+        <li>Some prop: {state.props.someProp}</li>
         <li>Combined number: {state.combinedNumber}</li>
       </ul>
     }
@@ -337,7 +272,7 @@ export class MyStateClass {
   increment = () => this.count.set(this.count.value + 1)
 }
 
-// and both inside a component, inlined look like this:
+// and both inside a component, inlined looks like this:
 export const MyComponent = X(() => {
   // Functional
   const state = X.useState(() => {
@@ -392,9 +327,9 @@ export function MyGlobalStateFn() {
 ```
 
 
-##  4. State should be decoupled from the component
+##  4. State can be decoupled from the component
 
-State should be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
+State can be decoupled completely from the component so that it may be reasoned with effectively. This keeps things sane as a project grows.
 
 In this example the state lives in another file, and the component is just a view into that state.
 
@@ -403,7 +338,10 @@ In this example the state lives in another file, and the component is just a vie
 import { X } from '@n4s/xcomponent'
 
 export class MyComponentState {
-  props = { someProp: 0 } // Init the props with some default value for observability & type inference
+  constructor(public props: { someProp: number }) {
+    makeAutoObservable(this)
+  }
+
   count = new X.Value(0)
 
   get combinedNumber() {
@@ -412,18 +350,31 @@ export class MyComponentState {
 
   increment = () => this.count.set(this.count.value + 1)
 }
+
+export const MyComponentStateAsFn = (props: { someProp: number }) => {
+  // ^ props is an observable store already.
+  const count = new X.Value(0)
+
+  return {
+    count,
+    get combinedNumber() { return count.value + props.someProp },
+    increment: () => count.set(count.value + 1)
+  }
+}
 ```
 - ./src/MyComponent.tsx
 ```tsx
 import { X } from '@n4s/xcomponent'
-import { MyComponentState } from './MyComponentState'
+import { MyComponentState, MyComponentStateAsFn } from './MyComponentState'
 
 // Can re-use the type defined by the state
 type MyComponentProps = typeof MyComponentState['props']['value']
 
 export const MyComponent = X((props: MyComponentProps) => {
-  const state = X.useState(() => MyComponentState)
-  X.useProps(props, state.props)
+  // Classes
+  const state = X.useState(props, (props) => new MyComponentState(props))
+  // Fn if you prefer
+  const stateFromFn = X.useState(props, MyComponentStateAsFn)
 
   return <>
     <div>{props.someProp}</div>
@@ -476,98 +427,7 @@ const Example = () =>
   </Dialog>
 ```
 
-##  5. Conventions / Philosophy
-
-###  5.1. Use either `class` or `function` syntax consistently for all state
-
-Mobx and classes go well together, and classes are a great structure to represent the imperative nature of state.
-
-However, state functions can be more concise.
-
-Ideally you should choose one pattern and roll with it throughout the project. I personally find classes easier to construct trees with, handle dependency injection etc.
-
-Classes also double up as a type interface. The key issue people find with classes is that it can become easier than other structures to become careless, and to overload them with too many responsibilities, which is why we should take note of the single responsibility principal.
-
-Functional code can also suffer from the same issues, but it can be easier to refactor and move around. That flexibility can be a double edged sword, however.
-
-###  5.2. As a compositional root toolbox for your project
-
-I also posit the idea that we should encourage a single compositional root for all tools and generic components that are frequently used across a single project.
-
-You would re-export your own `X` to use throughout your projects state & components. Ideally no-where else, leave that to regular imports & conventions.
-
-This pattern would then serve to bring together consistency within a project - there is something to be said for a curated, deliberate namespace with auto-discovery - so that one doesn't have to sift through a sea of tsconfig path aliases, components & utility dumping folders etc. in order to be consistent with the project's conventions.
-
-Only the most battle hardened, necessary tools should appear in your projects `X` root.
-
-A good rule of thumb would be to analyze a project and find the patterns that are heavily repeated, that which an abstraction would actually benefit from.
-
-- ./src/X.ts
-```tsx
-// Your compositional root for `X`
-import { X as XComponent } from '@n4s/XComponent';
-import { useRootState } from './RootState'; // Your custom hook
-import { SomeDateRelatedModel } from './models/SomeDateRelatedModel'; // Your custom class
-
-import dayjs from 'dayjs';
-import timezonePlugin from 'dayjs/plugin/timezone';
-import utcPlugin from 'dayjs/plugin/utc';
-import isBetween from 'dayjs/plugin/isBetween';
-
-dayjs.extend(timezonePlugin);
-dayjs.extend(utcPlugin);
-dayjs.extend(isBetween);
-
-export const X = XComponent.extend({ dayjs, useRootState, SomeDateRelatedModel });
-```
-
-then
-
-- ./src/MyComponent.tsx
-```tsx
-import { X } from '~/X'; // Or however you would like to import
-
-const MyComponent = X<{ someProp: number }>((props) => {
-  const { api } = X.useRootState();
-
-  const state = X.useState(() => class {
-    dateRange = new X.SomeDateRelatedModel()
-
-    orders = new X.AsyncValue(async () =>
-      api.fetch(`/orders?from=${this.dateRange.from.getTime()}&to=${this.dateRange.to.getTime()}`)
-    )
-
-    get dateText() {
-      return X.dayjs(this.dateRange.from).tz('America/New_York').format('YYYY-MM-DD')
-    }
-  })
-
-  // lets imagine we want to automatically fetch data
-  // whenever the selected date range changes
-  X.useReaction(
-    () => state.dateRange.from,
-    () => state.orders.query(),
-    { delay: 2000 }
-  )
-
-  return <div>
-    {/*
-      by passing the model in, we are letting the component set & read the value in a succinct way
-      and the props type definition for MyDateRangePicker need only be a subset, such as:
-      { from: Date, to: Date, set: (from: Date, to: Date) => void }
-      or to be even more lazy, use type SomeDateRelatedModel, thus making it coupled to that model.
-     */}
-    <MyDateRangePicker value={state.dateRange} />
-    <p>Selected date: {state.dateText}</p>
-    {state.orders.isPending && 'Loading...'}
-    {state.orders.error && <>{state.orders.error.message}</>}
-    {state.orders.value?.map(({ user, time }) => <div>{time} {user.name}</div>)}
-  </div>
-})
-```
-
-
-###  5.3. Dismiss unecessary React hooks
+##  5. Dismiss unecessary React hooks
 
 Moving logic to `mobx` allows for the majority of React state-related hooks to be dismissed. The nature of observables means that many of React's lifecycle hooks corrupt the state lifecycle, and should be avoided. We want to let `mobx` handle it.
 
@@ -576,7 +436,6 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
     - X Alternatives:
       -  `useOnMounted`
       -  `useOnUnmounted`
-      -  `useProps`
       -  `useReaction`
       -  `useAutorun`
   - `useLayoutEffect`
@@ -585,7 +444,7 @@ Moving logic to `mobx` allows for the majority of React state-related hooks to b
   - `useCallback`
   - `useState`
   - `useReducer`
-  - `useMemo` maybe?
+  - `useMemo`
   - etc.
 
 ##  6. Helper models
