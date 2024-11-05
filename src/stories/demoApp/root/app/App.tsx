@@ -1,6 +1,6 @@
-import { Col, Row } from '@/__common/Grid';
-import { Navbar } from '@/root/navigation/Navbar';
-import { X } from '@/X';
+import { Col, Row } from '~/__common/Grid';
+import { Navbar } from '~/root/navigation/Navbar';
+import { X } from '~/X';
 import type { ReactNode } from 'react';
 import { UserProfile } from './userProfile/UserProfile';
 

@@ -30,20 +30,44 @@ class ClassType {}
  * Use a class, function, or object as a stateful store
  * makeAutoObservable/makeAutoObservable is optional.
  * @example
- * useState(() => class {})
- * useState(() => X.Value({}))
- * useState(() => ({}))
+ * useState(() => class { count = 0 })
+ * useState(() => ({ count: 0 }))
  * useState(() => {
  *   const count = X.Value(0)
  *   return { count, get double() { return count.value * 2 } }
  * })
+ *
+ * You can also pass in props to make them observable.
+ *
+ * @example
+ * useState(props, (props) => class {
+ *   get sum() { return props.a + props.b }
+ * })
  */
-export const useState = <C extends typeof ClassType | object>(
-  initializer: () => C,
-) =>
-  useReactState(() => {
+export function useState<P extends object, C extends typeof ClassType | object>(
+  props: P,
+  initializer: (props: P) => C,
+): C extends typeof ClassType ? InstanceType<C> : C;
+export function useState<P extends object, C extends typeof ClassType | object>(
+  initializer: (props: P) => C,
+): C extends typeof ClassType ? InstanceType<C> : C;
+
+export function useState<P extends object, C extends typeof ClassType | object>(
+  ...args: [P, (props: P) => C] | [(props: P) => C]
+) {
+  const hasPropsArg = args.length === 2;
+  const initializer = !hasPropsArg ? args[0] : args[1];
+  const propsStore = (() => {
+    const props = !hasPropsArg ? undefined : args[0];
+
+    if (hasPropsArg) return useObjectStore(props);
+
+    return { value: {} as P };
+  })();
+
+  const state = useReactState(() => {
     const store = (() => {
-      const uninitializedStore = initializer();
+      const uninitializedStore = initializer(propsStore.value);
 
       if (typeof uninitializedStore === 'function') {
         const ClassStore = uninitializedStore as typeof ClassType;
@@ -58,6 +82,9 @@ export const useState = <C extends typeof ClassType | object>(
 
     return makeAutoObservable(store);
   })[0] as C extends typeof ClassType ? InstanceType<C> : C;
+
+  return state;
+}
 
 export const useOnMounted = (fn: () => any) => {
   useEffect(() => {
@@ -94,9 +121,21 @@ export function useProps<P extends Record<string, any>>(
     runInAction(() => {
       if (typeof store === 'function') return store(props);
 
+      // TODO: inspect mobx administration obj for parity before trying to update it
       if (isDeepEqual(store, props)) return;
 
       Object.assign(store, props);
     });
   }, [props]);
+}
+
+// Creates a mobx store on mount, then synchronizes input props into the store, only updating with prop changes
+export function useObjectStore<P extends Record<string, any>>(value = {} as P) {
+  const [store] = useReactState(() => makeAutoObservable({ value }));
+
+  console.log({ store });
+
+  useProps(value, store.value);
+
+  return store;
 }

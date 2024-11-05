@@ -1,4 +1,4 @@
-import { X } from '@/X';
+import { X } from '~/X';
 import { RootStateProvider } from './hooks';
 import { LandingPage } from './landingPage/LandingPage';
 import { App } from './app/App';

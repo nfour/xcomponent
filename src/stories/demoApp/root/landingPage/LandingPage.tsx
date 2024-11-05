@@ -1,4 +1,4 @@
-import { X } from '@/X';
+import { X } from '~/X';
 import { Navbar } from '../navigation/Navbar';
 
 export const LandingPage = X(() => {

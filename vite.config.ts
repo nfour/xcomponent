@@ -1,4 +1,5 @@
 import reactPlugin from '@vitejs/plugin-react';
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -10,5 +11,16 @@ export default defineConfig({
   ],
   preview: {
     open: false,
+  },
+  test: {
+    environment: 'jsdom',
+  },
+  resolve: {
+    alias: [
+      {
+        find: /^~\/(.+)/,
+        replacement: resolve('./src/$1'),
+      },
+    ],
   },
 });

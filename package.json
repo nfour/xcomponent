@@ -12,7 +12,7 @@
     "build:mjs:watch": "tsc -p tsconfig.mjs.json --watch",
     "build:watch": "pnpm build:clean; pnpm run '/(cjs|mjs):watch$/'",
     "build:clean": "rm -rf ./x/*",
-    "test": "vitest"
+    "test": "vitest dev -r ./src"
   },
   "main": "./x/cjs/index.js",
   "module": "./x/mjs/index.js",

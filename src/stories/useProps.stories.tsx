@@ -1,4 +1,4 @@
-import { X } from '@/X';
+import { X } from '~/X';
 import { runInAction } from 'mobx';
 
 const ComponentThatTakesNestedReactiveProps = X<{

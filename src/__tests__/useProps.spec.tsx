@@ -4,7 +4,6 @@ import { isObservableProp, makeAutoObservable } from 'mobx';
 import { it, describe, expect } from 'vitest';
 import { useProps } from '../hooks';
 import { renderHook } from '@testing-library/react';
-// import '@testing-library/jest-dom';
 
 describe('useProps', () => {
   it('should make each prop observable', () => {
@@ -33,6 +32,4 @@ describe('useProps', () => {
     expect(isObservableProp(store.props.a, 'b')).toBe(true);
     expect(isObservableProp(store.props.a, 'c')).toBe(true);
   });
-
-  // it('')
 });

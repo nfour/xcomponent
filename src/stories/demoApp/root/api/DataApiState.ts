@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import type { AuthApiState } from './AuthApiState';
-import { MOCKED_API_URL } from '@/__mocks__/api/fetchMocks';
+import { MOCKED_API_URL } from '~/__mocks__/api/fetchMocks';
 
 // Lets use a mock URL to simulate an actual api flow
 const BASE_URL = MOCKED_API_URL;

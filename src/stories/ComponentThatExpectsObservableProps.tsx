@@ -1,4 +1,4 @@
-import { X } from '@/X';
+import { X } from '~/X';
 
 export const ComponentThatExpectsObservableProps = X<{
   val: number;

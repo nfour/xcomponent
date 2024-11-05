@@ -1,6 +1,6 @@
-import { X } from '@/X';
+import { X } from '~/X';
 import { AppLayout } from '../App';
-import { Col } from '@/__common/Grid';
+import { Col } from '~/__common/Grid';
 
 export const UserProfile = X(() => {
   const { router, dataApi } = X.useRootState();

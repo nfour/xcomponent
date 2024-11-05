@@ -1,5 +1,5 @@
-import { X } from '@/X';
-import { Col, Row } from '@/__common/Grid';
+import { X } from '~/X';
+import { Col, Row } from '~/__common/Grid';
 
 export const Navbar = X(() => {
   const { router, authApi } = X.useRootState();

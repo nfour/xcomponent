@@ -525,7 +525,7 @@ then
 
 - ./src/MyComponent.tsx
 ```tsx
-import { X } from '@/X'; // Or however you would like to import
+import { X } from '~/X'; // Or however you would like to import
 
 const MyComponent = X<{ someProp: number }>((props) => {
   const { api } = X.useRootState();
