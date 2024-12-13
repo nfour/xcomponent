@@ -133,8 +133,6 @@ export function useProps<P extends Record<string, any>>(
 export function useObjectStore<P extends Record<string, any>>(value = {} as P) {
   const [store] = useReactState(() => makeAutoObservable({ value }));
 
-  console.log({ store });
-
   useProps(value, store.value);
 
   return store;
