@@ -5,7 +5,6 @@ import {
   makeAutoObservable,
   isObservable,
   runInAction,
-  observable,
 } from 'mobx';
 import { useEffect, useState as useReactState } from 'react';
 import { isDeepEqual } from 'remeda';
@@ -132,9 +131,7 @@ export function useProps<P extends Record<string, any>>(
 
 // Creates a mobx store on mount, then synchronizes input props into the store, only updating with prop changes
 export function useObjectStore<P extends Record<string, any>>(value = {} as P) {
-  const [store] = useReactState(() =>
-    makeAutoObservable({ value }, { value: observable.struct }),
-  );
+  const [store] = useReactState(() => makeAutoObservable({ value }));
 
   useProps(value, store.value);
 
