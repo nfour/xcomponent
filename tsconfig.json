@@ -10,6 +10,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
     "resolveJsonModule": true,
+    "noEmit": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
       "~/*": [

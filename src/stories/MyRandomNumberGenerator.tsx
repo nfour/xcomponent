@@ -2,6 +2,7 @@ import { X } from '../XComponent';
 import { css } from '@emotion/react';
 import { SomeObservableComponentWithAIntervalTimer } from './SomeObservableComponentWithAIntervalTimer';
 import { makeAutoObservable } from 'mobx';
+import { AsyncValue, Value } from '../mobx';
 
 export const MyRandomNumberGenerator = X<{
   maximumGenerationAttempts: number;
@@ -14,7 +15,8 @@ export const MyRandomNumberGenerator = X<{
   // which will be `makeAutoObservable`'d if there is no constructor present.
   // With this we can achieve consistant syntax across all state definitions, whether local or global state
   const state = X.useState(
-    () =>
+    props,
+    (props) =>
       class {
         constructor() {
           makeAutoObservable(this);
@@ -27,22 +29,18 @@ export const MyRandomNumberGenerator = X<{
         // `Value` is just a mobx boxed store: { value: T, set: (v: T) => void }
         // We make `props` observable so we can react to changes within this class,
         // without complicated useEffects
-        props = new X.Value(props);
-        generationCount = new X.Value(0);
+        generationCount = new Value(0);
 
         // AsyncValue is a mobx store which essentially wraps a async value ergonomically (similar to react-query?),
         // providing .value, .error, .isPending, .query(), .set(), .progress, .clearQueue() etc.
         // Types are also inferred nicely
-        myGeneratedNumber = new X.AsyncValue(
+        myGeneratedNumber = new AsyncValue(
           ({ from, to }: { from: number; to: number }) =>
             api.fetchSomeNumber({ from, to }).then((data) => data?.someNumber),
         );
 
         get isOutOfAttempts() {
-          return (
-            this.generationCount.value >=
-            this.props.value.maximumGenerationAttempts
-          );
+          return this.generationCount.value >= props.maximumGenerationAttempts;
         }
 
         generateNumber = async () => {
@@ -51,8 +49,8 @@ export const MyRandomNumberGenerator = X<{
           this.generationCount.set(this.generationCount.value + 1);
 
           await this.myGeneratedNumber.reset().query({
-            from: this.props.value.range.from,
-            to: this.props.value.range.to,
+            from: props.range.from,
+            to: props.range.to,
           });
         };
 
@@ -66,10 +64,6 @@ export const MyRandomNumberGenerator = X<{
   const funcState = X.useState(() => ({
     someState: 'hello',
   }));
-
-  // Whenever a new react prop object values change occurs,
-  // update the Value store with only those changed
-  X.useProps(props, state.props);
 
   // effectively `useEffect(() => fn(), [])`
   X.useOnMounted(() => {

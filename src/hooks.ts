@@ -48,6 +48,17 @@ export function useState<P extends object, C extends typeof ClassType | object>(
   props: P,
   initializer: (props: P) => C,
 ): C extends typeof ClassType ? InstanceType<C> : C;
+/**
+ * Use a class, function, or object as a stateful store
+ * makeAutoObservable/makeAutoObservable is optional.
+ * @example
+ * useState(() => class { count = 0 })
+ * useState(() => ({ count: 0 }))
+ * useState(() => {
+ *   const count = X.Value(0)
+ *   return { count, get double() { return count.value * 2 } }
+ * })
+ */
 export function useState<P extends object, C extends typeof ClassType | object>(
   initializer: (props: P) => C,
 ): C extends typeof ClassType ? InstanceType<C> : C;
@@ -58,7 +69,7 @@ export function useState<P extends object, C extends typeof ClassType | object>(
   const hasPropsArg = args.length === 2;
   const initializer = !hasPropsArg ? args[0] : args[1];
   const propsStore = (() => {
-    const props = !hasPropsArg ? undefined : args[0];
+    const props = !hasPropsArg ? ({} as P) : args[0];
 
     if (hasPropsArg) return useObjectStore(props);
 
@@ -86,54 +97,32 @@ export function useState<P extends object, C extends typeof ClassType | object>(
   return state;
 }
 
+/** Triggers once on component mount */
 export const useOnMounted = (fn: () => any) => {
   useEffect(() => {
     fn();
   }, []);
 };
 
+/** Triggers once on component unmount */
 export const useOnUnmounted = (fn: () => void) => {
   useEffect(() => fn, []);
 };
 
-/** useReaction or useAutorun based on your input lengths */
-export const useOnReaction = (
-  ...inputs: Parameters<typeof useReaction> | Parameters<typeof useAutorun>
-) => {
-  if (!(inputs[1] instanceof Function)) return useAutorun(inputs[0], inputs[1]);
-  else return useReaction(inputs[0], inputs[1], inputs[2]);
-};
-
-export function useProps<P extends Record<string, any>, V extends P>(
-  props: P,
-  store: V,
-): void;
-export function useProps<
-  P extends Record<string, any>,
-  V extends (v: P) => void,
->(props: P, store: V): void;
-
-export function useProps<P extends Record<string, any>>(
-  props: P,
-  store: P | ((v: P) => void),
-) {
-  useEffect(() => {
-    runInAction(() => {
-      if (typeof store === 'function') return store(props);
-
-      // TODO: inspect mobx administration obj for parity before trying to update it
-      if (isDeepEqual(store, props)) return;
-
-      Object.assign(store, props);
-    });
-  }, [props]);
-}
-
-// Creates a mobx store on mount, then synchronizes input props into the store, only updating with prop changes
-export function useObjectStore<P extends Record<string, any>>(value = {} as P) {
+/**
+ *  Creates a mobx store on mount, then synchronizes input props into the store, only updating with prop changes
+ */
+export function useObjectStore<P extends Record<string, any>>(value: P) {
   const [store] = useReactState(() => makeAutoObservable({ value }));
 
-  useProps(value, store.value);
+  useEffect(() => {
+    runInAction(() => {
+      // TODO: inspect mobx administration obj for parity before trying to update it
+      if (isDeepEqual(store.value, value)) return;
+
+      Object.assign(store.value, value);
+    });
+  }, [value]);
 
   return store;
 }

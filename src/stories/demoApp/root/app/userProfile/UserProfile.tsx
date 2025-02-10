@@ -1,9 +1,9 @@
-import { X } from '~/X';
+import { AsyncValue, useRootState, X } from '~/X';
 import { AppLayout } from '../App';
 import { Col } from '~/__common/Grid';
 
 export const UserProfile = X(() => {
-  const { router, dataApi } = X.useRootState();
+  const { router, dataApi } = useRootState();
   const state = X.useState(
     () =>
       class AppProfileState {
@@ -15,7 +15,7 @@ export const UserProfile = X(() => {
           return this.route.pathname.username;
         }
 
-        user = new X.AsyncValue(() =>
+        user = new AsyncValue(() =>
           dataApi.getUser({ username: this.username }),
         );
       },

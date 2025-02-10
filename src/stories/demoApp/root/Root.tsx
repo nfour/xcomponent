@@ -1,4 +1,4 @@
-import { X } from '~/X';
+import { X, useRootState } from '~/X';
 import { RootStateProvider } from './hooks';
 import { LandingPage } from './landingPage/LandingPage';
 import { App } from './app/App';
@@ -15,7 +15,7 @@ export const Root = X(() => {
 });
 
 export const RootRoutes = X(() => {
-  const { router } = X.useRootState();
+  const { router } = useRootState();
 
   switch (router.route?.key) {
     case 'home':

@@ -1,8 +1,8 @@
-import { X } from '~/X';
+import { useRootState, X } from '~/X';
 import { Navbar } from '../navigation/Navbar';
 
 export const LandingPage = X(() => {
-  const { router } = X.useRootState();
+  const { router } = useRootState();
 
   return (
     <div>

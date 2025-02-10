@@ -1,8 +1,8 @@
-import { X } from '~/X';
+import { useRootState, X } from '~/X';
 import { Col, Row } from '~/__common/Grid';
 
 export const Navbar = X(() => {
-  const { router, authApi } = X.useRootState();
+  const { router, authApi } = useRootState();
 
   return (
     <Col>

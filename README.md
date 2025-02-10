@@ -98,11 +98,11 @@ export const MyComponent = observer<{ someProp: number }>((props) => {
 // AFTER:
 //
 
-import { X } from '@n4s/xcomponent'
+import { X, Value} from '@n4s/xcomponent'
 
 export const MyComponent = X<{ someProp: number }>((props) => {
   const state = X.useState(props, (props) => class {
-    count = new X.Value(0)
+    count = new Value(0)
 
     get combinedNumber() {
       return this.count.value + props.someProp // must access props through `props.` for reactivity

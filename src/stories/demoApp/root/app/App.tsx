@@ -1,11 +1,11 @@
 import { Col, Row } from '~/__common/Grid';
 import { Navbar } from '~/root/navigation/Navbar';
-import { X } from '~/X';
+import { useRootState, X, AsyncValue, Value } from '~/X';
 import type { ReactNode } from 'react';
 import { UserProfile } from './userProfile/UserProfile';
 
 export const App = X(() => {
-  const { router } = X.useRootState();
+  const { router } = useRootState();
 
   /**
    * Here we demonstrate multiple pages being gated by a nested component.
@@ -39,11 +39,11 @@ export const AppLayout = X(({ children }: { children: ReactNode }) => (
 ));
 
 const AppHome = X(() => {
-  const { router, dataApi } = X.useRootState();
+  const { router, dataApi } = useRootState();
   const state = X.useState(
     () =>
       class {
-        users = new X.AsyncValue(() => dataApi.getAllUsers());
+        users = new AsyncValue(() => dataApi.getAllUsers());
       },
   );
 
@@ -82,12 +82,12 @@ const AppHome = X(() => {
 });
 
 const LoginPage = X(() => {
-  const { authApi, router } = X.useRootState();
+  const { authApi, router } = useRootState();
   const state = X.useState(
     () =>
       class {
-        username = new X.Value('');
-        password = new X.Value('');
+        username = new Value('');
+        password = new Value('');
 
         get isInputValid() {
           return (
@@ -133,7 +133,7 @@ const LoginPage = X(() => {
 });
 
 const LogoutPage = X(() => {
-  const { router, authApi } = X.useRootState();
+  const { router, authApi } = useRootState();
 
   X.useOnMounted(() => {
     authApi.logout.query();

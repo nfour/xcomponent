@@ -1,6 +1,8 @@
+import * as z from 'zod';
 import { XRoute, XRouter } from 'xroute';
-import 'xroute/x/esm/XRouteSchema';
 import { createMemoryHistory } from 'history';
+
+z; // fix type issues lol
 
 export const createRouter = () =>
   new XRouter(

@@ -1,4 +1,4 @@
-import { X } from '~/X';
+import { AsyncValue } from '~/X';
 
 export class AuthApiState {
   get authToken() {
@@ -9,11 +9,11 @@ export class AuthApiState {
     return !!this.authToken;
   }
 
-  login = new X.AsyncValue(
+  login = new AsyncValue(
     async ({ username, password }: { username: string; password: string }) => {
       // Pretend we're logging in with a username and password
 
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       return {
         username,
@@ -23,9 +23,9 @@ export class AuthApiState {
     },
   );
 
-  logout = new X.AsyncValue(async () => {
+  logout = new AsyncValue(async () => {
     // Pretend we're logging out
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     this.login.reset();
   });
 }

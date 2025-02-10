@@ -12,14 +12,11 @@ export default defineConfig({
   preview: {
     open: false,
   },
-  test: {
-    environment: 'jsdom',
-  },
   resolve: {
     alias: [
       {
         find: /^~\/(.+)/,
-        replacement: resolve('./src/$1'),
+        replacement: resolve('./src/stories/demoApp/$1'),
       },
     ],
   },
