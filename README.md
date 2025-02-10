@@ -2,6 +2,24 @@
 
 A microframework that combines MobX and React to solve common performance, state management, and lifecycle issues.
 
++ [Install](#install)
++ [Features](#features)
++ [Usage](#usage)
+  + [Basic Component](#basic-component)
+  + [Inline State](#inline-state)
+  + [Lifecycle Hooks](#lifecycle-hooks)
+  + [Component Composition](#component-composition)
++ [API](#api)
+  + [Core](#core)
+  + [Models](#models)
+    + [Value](#value)
+    + [AsyncValue](#asyncvalue)
+    + [BoxedValue](#boxedvalue)
+    + [BoolValue](#boolvalue)
++ [Documentation](#documentation)
++ [License](#license)
+
+
 ## Install
 
 ```bash
@@ -153,6 +171,125 @@ const Dialog = X(({ children }) => (
 - `AsyncValue<T>` - Async state container with pending/error/value states
 - `BoxedValue<T>` - Encapsulated observable with custom getter/setter
 - `BoolValue` - Boolean value with toggle utilities
+
+
+#### Value
+
+The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
+
+Features:
+- Type inferrence
+- Async mobx actions (no need to wrap in `runInAction` or use `flow` generators)
+- Terseness
+- Avoids reading `value` until necessary during prop-passing
+- Supports two way binding patterns
+
+```tsx
+const selectedFruit = new Value<'banana'|'apple'|undefined>(undefined)
+selectedFruit.set('test') // TS error
+selectedFruit.set('banana') // Valid
+selectedFruit.value // 'banana'
+```
+
+####  AsyncValue
+
+Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
+
+
+Features:
+- Ergonomic types
+- Async mobx actions
+- Queuing
+- Promise cancellation
+- Pending state
+- Error state
+- Success state
+- Progress state (eg. for uploads)
+
+```tsx
+async function fetchFiles(c: { userId: string; foo: number }): Promise<{ name: string }[]> {
+  return []
+}
+
+class ExampleModel {
+  constructor() { makeAutoObservable(this) }
+  activeUserId = '22'
+  files = new AsyncValue(async ({ foo }: { foo: number }) =>
+    fetchFiles({ userId: this.activeUserId, foo })
+  )
+}
+
+const example = new ExampleModel()
+example.files.value?.[0]?.name // undefined - missing data
+await example.files.query({ foo: 22 }) // foo is strongly typed, inferred!
+example.files.value?.[0]?.name // 'myFile.txt' - has data!
+example.files.error // undefined - no error
+example.files.isPending // false - we already awaited it
+
+const v = new AsyncValue(() => fetchUsersList())
+v.value // undefined
+const promise = v.query() // Don't need to provide params as none are defined
+v.isPending // true
+await promise
+v.isPending // false
+v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
+```
+
+
+####  BoxedValue
+
+Very similar to `Value`, however, allows for the getter and setter to be defined seperately, and additionally encapsulates the observable value inside the closure.
+
+```tsx
+
+const blah = { something: 'banana' }
+
+const somethingFromUri = new BoxedValue(
+  // getter
+  () => uriRoutes.someRoute.search.something,
+  // setter
+  (newValue) => uriRoutes.someRoute.push((uri) => ({ search: { something: newValue } })),
+)
+
+somethingFromUri.value // 'foo'
+somethingFromUri.set('bar')
+somethingFromUri.value // 'bar'
+
+// Here we omit the setter, so the value is read-only
+// This is effectively just a container encapsulating the value
+const somethingWrappedToOptimizeObservability = new BoxedValue(
+  () => blah.something,
+)
+
+somethingWrappedToOptimizeObservability.value // 'banana'
+somethingWrappedToOptimizeObservability.set('banana') // does nothing, because no setter
+  
+```
+
+####  BoolValue
+
+A `Value` that is specifically for boolean values. It has a few additional methods to make working with booleans easier.
+
+```tsx
+
+const isOpen = new BoolValue(true)
+
+isOpen.toggle() // false
+isOpen.toggle() // true
+isOpen.setFalse()
+isOpen.value // false
+isOpen.isTrue // false
+isOpen.setTrue()
+isOpen.isTrue // true
+isOpen.value // false
+
+const Example = X(() => 
+  <>
+    <button onClick={isOpen.toggle}>Open</button>
+    <Dialog onClose={isOpen.setFalse}>...</Dialog>
+  </>
+)
+```
 
 ## Documentation
 
