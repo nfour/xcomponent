@@ -5,6 +5,7 @@
     "moduleResolution": "Node",
     "outDir": "./x/mjs",
     "jsx": "react-jsx",
+    "noEmit": false,
     "jsxImportSource": null
   },
   "include": [

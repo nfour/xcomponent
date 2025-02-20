@@ -5,6 +5,7 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "outDir": "./x/cjs",
+    "noEmit": false,
     "jsx": "react-jsx",
     "jsxImportSource": null
   },
