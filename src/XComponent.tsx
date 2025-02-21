@@ -28,7 +28,9 @@ import { setComponentNameForDebugging } from './utils';
  * <Dialog.Head prop2={1} />
  */
 export const xcomponent = <PROPS extends {}>(
-  Fn: (p: { className?: string } & PROPS) => ReactNode,
+  Fn: ((p: { className?: string } & PROPS) => ReactNode) & {
+    displayName?: string;
+  },
   {
     setDisplayName = true,
   }: {
@@ -39,7 +41,7 @@ export const xcomponent = <PROPS extends {}>(
     setDisplayName?: boolean;
   } = {},
 ) => {
-  if (setDisplayName)
+  if (setDisplayName && !Fn.displayName)
     try {
       throw new Error('Name');
     } catch (err: any) {
