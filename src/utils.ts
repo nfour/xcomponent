@@ -8,8 +8,8 @@ export function setComponentNameForDebugging(
     ?.split(/\s*at /)?.[1]
     ?.replace(/[?]t=\d+/, '');
 
-  const fileName = stackPath?.match(/\/([^/]+)/)?.[1];
-  const name = `${fileName}`;
+  const fileName = stackPath?.match(/\/([^/]+)\.tsx?/)?.[1];
+  const name = `File: ${fileName}`;
 
   return Object.defineProperties(Fn, {
     name: { value: name },
