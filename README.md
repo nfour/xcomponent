@@ -38,12 +38,32 @@ pnpm add @n4s/xcomponent
 
 ### Basic Component
 
-```tsx
-import { X } from '@n4s/xcomponent'
+When NOT using a compile plugin to auto-wrap components for observability:
 
-const MyComponent = X<{ count: number }>(({ count }) => (
-  <div>{count}</div>
-))
+```tsx
+// BEFORE: MobX Observer
+import { observer } from 'mobx-react-lite'
+const MyComponent = observer((props: { someProp: number }) => <>{props.someProp}</>)
+
+// AFTER: XComponent
+import { X } from '@n4s/xcomponent'
+const MyComponent = X((props: { someProp: number }) => <>{props.someProp}</>)
+```
+
+If you ARE using a compile plugin to auto-wrap, you can omit the HOC wrapper:
+
+```tsx
+export const MyComponent = (props: { someProp: number }) => {
+  const state = X.useState(props, (p) => class {
+    foo = new Value(0)
+
+    get computed() {
+      return this.foo.value + p.someProp
+    }
+  })
+
+  return <>{state.computed}</>
+}
 ```
 
 ### Inline State
@@ -51,7 +71,7 @@ const MyComponent = X<{ count: number }>(({ count }) => (
 ```tsx
 import { X, Value } from '@n4s/xcomponent'
 
-const Counter = X(() => {
+const Counter = () => {
   const state = X.useState(() => class {
     count = new Value(0)
     get doubledCount() {
@@ -67,14 +87,14 @@ const Counter = X(() => {
       <button onClick={state.increment}>+</button>
     </>
   )
-})
+}
 
 /**
  * This demonstrates taking in props, using them observably within X.useState.
  * 
  * <ObservablePropsCounter multiplier={2.5} initialCount={0} />
  */
-const ObservablePropsCounter = X<{ initialCount: number, multiplier: number }>((props) => {
+const ObservablePropsCounter = (props: { initialCount: number, multiplier: number }) => {
   const state = X.useState(props, (props) => class {
     count = new Value(props.initialCount)
     get multipliedCount() {
@@ -90,7 +110,7 @@ const ObservablePropsCounter = X<{ initialCount: number, multiplier: number }>((
       <button onClick={state.increment}>+</button>
     </>
   )
-})
+}
 ```
 
 ### Lifecycle Hooks
@@ -293,10 +313,9 @@ const Example = X(() =>
 
 ## Documentation
 
-- [Extended Documentation and Examples](./ExtendedExplanation.md)
-  - Further reading for advanced use cases, justifications etc.
 - [Conventions](./Conventions.md)
   - Plug this into your AI instructions as prompts.
+
 ## License
 
 MIT

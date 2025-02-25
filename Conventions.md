@@ -5,7 +5,7 @@ XComponent is a lightweight framework that combines MobX and React. These patter
 ## Core Patterns
 
 ### 1. Basic Observer Pattern
-Convert a MobX observer component to XComponent:
+When NOT using a compile plugin to auto-wrap components for observability:
 
 ```tsx
 // BEFORE: MobX Observer
@@ -17,16 +17,33 @@ import { X } from '@n4s/xcomponent'
 const MyComponent = X((props: { someProp: number }) => <>{props.someProp}</>)
 ```
 
+If you ARE using a compile plugin to auto-wrap, you can omit the HOC wrapper:
+
+```tsx
+export const MyComponent = (props: { someProp: number }) => {
+  const state = X.useState(props, (p) => class {
+    foo = new Value(0)
+
+    get computed() {
+      return this.foo.value + p.someProp
+    }
+  })
+
+  return <>{state.computed}</>
+}
+```
+
 ### 2. State Management Pattern
 Handle component state with reactive updates:
 
 ```tsx
-// BEFORE: React State Hooks
+// BEFORE, regular react state:
 const Component = () => {
   const [count, setCount] = useState(0)
   const [data, setData] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const doubledCount = useMemo(() => count * 2, [count])
+  const multipliedByData = useMemo(() => data.length * count, [data, count])
   
   useEffect(() => {
     setIsLoading(true)
@@ -40,20 +57,26 @@ const Component = () => {
     <div>
       <h1>Count: {count}</h1>
       <h2>Doubled: {doubledCount}</h2>
+      <h3>Multiplied by data: {multipliedByData}</h3>
       <button onClick={() => setCount(c => c + 1)}>Increment</button>
       {isLoading ? <div>Loading...</div> : <div>{data.length} items</div>}
     </div>
   )
 }
 
-// AFTER: XComponent State
-const Component = X(() => {
+// AFTER, MobX XComponent State:
+const Component = () => {
   const state = X.useState(() => class {
-    count = new X.Value(0)
+    count = new Value(0)
     data = new AsyncValue(async () => fetchData())
     
     get doubledCount() {
       return this.count.value * 2
+    }
+
+    get multipliedByData() {
+      if (!this.data.value) return
+      return this.data.value.length * this.count.value
     }
 
     increment = () => this.count.set(this.count.value + 1)
@@ -67,12 +90,13 @@ const Component = X(() => {
     <div>
       <h1>Count: {state.count.value}</h1>
       <h2>Doubled: {state.doubledCount}</h2>
+      <h3>Multiplied by data: {state.multipliedByData ?? 'N/A'}</h3>
       <button onClick={state.increment}>Increment</button>
       {state.data.isPending ? <div>Loading...</div> : 
        <div>{state.data.value?.length} items</div>}
     </div>
   )
-})
+}
 ```
 
 ### 3. Reactive Props Pattern
@@ -91,9 +115,9 @@ const Filter = ({ items, filter }: { items: string[], filter: string }) => {
 }
 
 // AFTER: XComponent Reactive Props
-const Filter = X((reactProps: { items: string[], filter: string }) => {
+const Filter = (reactProps: { items: string[], filter: string }) => {
   const state = X.useState(reactProps, (props) => class {
-    filtered = new X.Value<string[]>([])
+    filtered = new Value<string[]>([])
     
     constructor() {
       this.updateFilter()
@@ -115,7 +139,7 @@ const Filter = X((reactProps: { items: string[], filter: string }) => {
   })
 
   return <ul>{state.filtered.value.map(item => <li>{item}</li>)}</ul>
-})
+}
 ```
 
 ### 4. Component Composition Pattern
@@ -127,7 +151,7 @@ const Dialog = observer<{ children: ReactNode }>((props) => <>{props.children}</
 const DialogHead = observer<{ children: ReactNode }>((props) => <h2>{props.children}</h2>)
 const Example = () => <Dialog><DialogHead>Title</DialogHead>Content</Dialog>
 
-// AFTER: XComponent Composition
+// AFTER: XComponent Composition using X wrapper and with() method.
 const Dialog = X((props) => <>{props.children}</> )
   .with({
     Head: X((props) => <h2 className={Dialog.classes.head}>{props.children}</h2>),
@@ -150,7 +174,7 @@ const Example = () => (
 
 ### 1. Basic Value
 ```tsx
-const count = new X.Value(0)
+const count = new Value(0)
 count.set(count.value + 1)
 ```
 
@@ -181,28 +205,31 @@ isOpen.setFalse() // false
 
 ### 1. Inline State
 ```tsx
-const Component = X(() => {
+const Component = () => {
   const state = X.useState(() => class {
-    value = new X.Value(0)
+    value = new Value(0)
     increment = () => this.value.set(this.value.value + 1)
   })
   return <button onClick={state.increment}>{state.value.value}</button>
-})
+}
 ```
 
 ### 2. Separated State
 ```tsx
-// state.ts
+// ComponentState.ts
 export class ComponentState {
-  constructor(public props: Props) {
+  constructor(public props: { someProp: number }) {
     makeAutoObservable(this)
   }
-  value = new X.Value(0)
+  value = new Value(0)
   increment = () => this.value.set(this.value.value + 1)
+  get computed() {
+    return this.value.value + this.props.someProp
+  }
 }
 
-// component.tsx
-const Component = X((props: Props) => {
+// Component.tsx
+export const Component = (props: ComponentState['props']) => {
   const state = X.useState(props, props => new ComponentState(props))
-  return <button onClick={state.increment}>{state.value.value}</button>
-})
+  return <button onClick={state.increment}>{state.computed}</button>
+}
