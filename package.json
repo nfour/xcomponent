@@ -28,6 +28,7 @@
     }
   },
   "files": [
+    "*.md",
     "x/*"
   ],
   "repository": {
