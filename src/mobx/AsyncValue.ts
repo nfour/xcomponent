@@ -8,12 +8,8 @@ import {
   runInAction,
 } from 'mobx';
 
-type MaybeCancellablePromise<T> = Promise<T> & {
-  cancel?(): void;
-};
-
 /**
- * A simple way to encapsulate async value access.
+ * Encapsulate async observable values with pending (queued), error and value states.
  *
  * Read the example closely:
  *
@@ -43,8 +39,8 @@ type MaybeCancellablePromise<T> = Promise<T> & {
  */
 export class AsyncValue<VALUE, PAYLOAD = any> {
   constructor(
-    private _query: (payload: PAYLOAD) => MaybeCancellablePromise<VALUE>,
-    private config: {
+    protected _query: (payload: PAYLOAD) => MaybeCancellablePromise<VALUE>,
+    protected _config: {
       /** Initial value */
       value?: VALUE;
       /** Changes the mobx value annotation for fine grained observability */
@@ -53,7 +49,7 @@ export class AsyncValue<VALUE, PAYLOAD = any> {
       disablePromiseCancellingOnReset?: boolean;
     } = {},
   ) {
-    const { value, valueAnnotation = observable } = config;
+    const { value, valueAnnotation = observable } = _config;
 
     this.value = value;
 
@@ -66,23 +62,33 @@ export class AsyncValue<VALUE, PAYLOAD = any> {
       set: action.bound,
       reset: action.bound,
       setError: action.bound,
+      config: false,
     });
   }
 
-  /** This is just for typescript */
-  protected PAYLOAD!: PAYLOAD;
+  hasBeenQueried = false;
+
+  /** The value from the last query */
+  value?: VALUE = undefined;
+  /** If a query throws, this will be set with the Error from the last query */
+  error?: Error = undefined;
+
+  /** This is used to ensure the `isPending` boolean works with concurrent queries */
+  queue = new Set<MaybeCancellablePromise<VALUE>>();
 
   get isPending() {
     return this.queue.size > 0;
   }
 
-  hasBeenQueried = false;
+  /** Set options.
+   *
+   * @example new AsyncValue(() => ...).config({ valueAnnotation: observable.ref })
+   */
+  config(c: Partial<typeof this._config>) {
+    Object.assign(this._config, c);
 
-  value?: VALUE = undefined;
-  error?: Error = undefined;
-
-  /** This is used to ensure the `isPending` boolean works with concurrent queries */
-  queue = new Set<MaybeCancellablePromise<VALUE>>();
+    return this;
+  }
 
   /**
    * @example
@@ -113,21 +119,39 @@ export class AsyncValue<VALUE, PAYLOAD = any> {
     return this;
   }
 
-  /** Clones this instance allowing seperate values to be stored with the same configuration */
-  clone = () => {
-    return new AsyncValue(this._query, this.config);
-  };
+  /** Clones this instance allowing seperate values to be stored, with the same configuration
+   *
+   * @example
+   *
+   * const v = new AsyncValue(() => getRandomNumber())
+   * const v2 = v.clone()
+   * await v.query().value // 1
+   * await v2.query().value // 2
+   * v.value // 1
+   * v2.value // 2
+   */
+  clone() {
+    return new AsyncValue(this._query, this._config);
+  }
 
-  /** Sets the value */
+  /** Sets the value
+   *
+   * @example
+   * v.value // undefined
+   * v.set(1)
+   * v.value // 1
+   */
   set(value: this['value']) {
     this.value = value;
 
     return this;
   }
 
-  /** Reset value to undefined */
+  setError = (v: this['error']) => (this.error = v);
+
+  /** Reset value to undefined, and handles promise cancellation if enabled. */
   reset() {
-    if (!this.config.disablePromiseCancellingOnReset) {
+    if (!this._config.disablePromiseCancellingOnReset) {
       this.queue.forEach((promise) => promise?.cancel?.());
       this.queue.clear();
     }
@@ -137,11 +161,13 @@ export class AsyncValue<VALUE, PAYLOAD = any> {
     return this;
   }
 
-  setError = (v: this['error']) => (this.error = v);
-
   /** Creates an autorun reaction whenever the error changes */
   onError = (cb: (err: this['error']) => void) => autorun(() => cb(this.error));
 
   /** Creates an autorun reaction whenever the value changes */
   onValue = (cb: (v: this['value']) => void) => autorun(() => cb(this.value));
 }
+
+type MaybeCancellablePromise<T> = Promise<T> & {
+  cancel?(): void;
+};
