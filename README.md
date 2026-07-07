@@ -19,7 +19,6 @@ A microframework that combines MobX and React to solve common performance, state
 + [Documentation](#documentation)
 + [License](#license)
 
-
 ## Install
 
 ```bash
@@ -36,45 +35,52 @@ pnpm add @n4s/xcomponent
 
 ## Usage
 
+For day-to-day usage, treat [SKILL.md](./SKILL.md) as the primary guide. It is the first-class usage reference for authoring xcomponent-based components, including build-time auto observer wrapping, local state patterns, reactions, async state, and composition.
+
+Use this README for the compact overview. Use [SKILL.md](./SKILL.md) for the authoritative workflow, caveats, and expanded examples.
+
 ### Basic Component
 
-When NOT using a compile plugin to auto-wrap components for observability:
+Manual wrap mode:
 
 ```tsx
-// BEFORE: MobX Observer
-import { observer } from 'mobx-react-lite'
-const MyComponent = observer((props: { someProp: number }) => <>{props.someProp}</>)
-
-// AFTER: XComponent
 import { X } from '@n4s/xcomponent'
-const MyComponent = X((props: { someProp: number }) => <>{props.someProp}</>)
+
+export const UserName = X(({ name }: { name: string }) => {
+  return <span>{name}</span>
+})
 ```
 
-If you ARE using a compile plugin to auto-wrap, you can omit the HOC wrapper:
+Build-time auto-wrap mode:
 
 ```tsx
-export const MyComponent = (props: { someProp: number }) => {
-  const state = X.useState(props, (p) => class {
-    foo = new Value(0)
+import { X, Value } from '@n4s/xcomponent'
 
-    get computed() {
-      return this.foo.value + p.someProp
+export const UserName = (props: { name: string }) => {
+  const state = X.useState(props, (props) => class {
+    prefix = new Value('User:')
+
+    get label() {
+      return `${this.prefix.value} ${props.name}`
     }
   })
 
-  return <>{state.computed}</>
+  return <span>{state.label}</span>
 }
 ```
+
+Use bare functions only when your build step really does inject MobX observation.
 
 ### Inline State
 
 ```tsx
 import { X, Value } from '@n4s/xcomponent'
 
-const Counter = () => {
+export const Counter = X(() => {
   const state = X.useState(() => class {
     count = new Value(0)
-    get doubledCount() {
+
+    get doubled() {
       return this.count.value * 2
     }
 
@@ -83,35 +89,15 @@ const Counter = () => {
 
   return (
     <>
-      Count: {state.count.value}, Doubled Count: {state.doubledCount}
+      <div>{state.count.value}</div>
+      <div>{state.doubled}</div>
       <button onClick={state.increment}>+</button>
     </>
   )
-}
-
-/**
- * This demonstrates taking in props, using them observably within X.useState.
- * 
- * <ObservablePropsCounter multiplier={2.5} initialCount={0} />
- */
-const ObservablePropsCounter = (props: { initialCount: number, multiplier: number }) => {
-  const state = X.useState(props, (props) => class {
-    count = new Value(props.initialCount)
-    get multipliedCount() {
-      return this.count.value * props.multiplier // props.multiplier is observable!
-    }
-
-    increment = () => this.count.set(this.count.value + 1)
-  })
-
-  return (
-    <>
-      Count: {state.count.value}, Multiplied Count: {state.multipliedCount}
-      <button onClick={state.increment}>+</button>
-    </>
-  )
-}
+})
 ```
+
+For observable props, custom-hook extraction, and functional-state variants, use [SKILL.md](./SKILL.md).
 
 ### Lifecycle Hooks
 
@@ -138,41 +124,31 @@ X.useAutorun(() => {
 })
 ```
 
+`X.useReaction` uses `fireImmediately: true` and structural comparison by default. See [SKILL.md](./SKILL.md) for the caveats around observable tracking and prop-driven reactions.
 
 ### Component Composition
 
-In the below examples you can see how to create a `Dialog` component with `Header` and `Body` subcomponents.
+Use `.with()` to attach subcomponents or static class maps.
 
 ```tsx
-const Dialog = X(({ children }) => (
-  <div className={Dialog.classes.dialog} >{children}</div>
-)).with({
-  Header: X(({ children }) => (
-    <header className={Dialog.classes.header} >{children}</header>
-  )),
-  Body: X(({ children }) => (
-    <div className={Dialog.classes.body}>{children}</div>
-  )),
+const Dialog = X(({ children }: { children: React.ReactNode }) => {
+  return <div className={Dialog.classes.root}>{children}</div>
+}).with({
+  Header: X(({ children }: { children: React.ReactNode }) => {
+    return <header className={Dialog.classes.header}>{children}</header>
+  }),
+  Body: X(({ children }: { children: React.ReactNode }) => {
+    return <section className={Dialog.classes.body}>{children}</section>
+  }),
   classes: {
-    dialog: 'dialog',
+    root: 'dialog-root',
     header: 'dialog-header',
     body: 'dialog-body',
-  }
+  },
 })
-
-// Usage
-<Dialog css={{
-  // Can also ovveride using the classes we defined.
-  [`.${Dialog.classes.dialog}`]: {
-    background: 'white',
-    padding: '1rem',
-  }
-}}>
-  <Dialog.Header>Title</Dialog.Header>
-  <Dialog.Body>Content</Dialog.Body>
-</Dialog>
 ```
 
+See [SKILL.md](./SKILL.md) for the full composition guidance and usage patterns.
 
 ## API
 
@@ -192,17 +168,11 @@ const Dialog = X(({ children }) => (
 - `BoxedValue<T>` - Encapsulated observable with custom getter/setter
 - `BoolValue` - Boolean value with toggle utilities
 
+For workflow guidance on when to choose each model, use [SKILL.md](./SKILL.md).
 
 #### Value
 
 The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
-
-Features:
-- Type inferrence
-- Async mobx actions (no need to wrap in `runInAction` or use `flow` generators)
-- Terseness
-- Avoids reading `value` until necessary during prop-passing
-- Supports two way binding patterns
 
 ```tsx
 const selectedFruit = new Value<'banana'|'apple'|undefined>(undefined)
@@ -211,110 +181,55 @@ selectedFruit.set('banana') // Valid
 selectedFruit.value // 'banana'
 ```
 
-####  AsyncValue
+#### AsyncValue
 
 Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
 
-
-Features:
-- Ergonomic types
-- Async mobx actions
-- Queuing
-- Promise cancellation
-- Pending state
-- Error state
-- Success state
-- Progress state (eg. for uploads)
-
 ```tsx
-async function fetchFiles(c: { userId: string; foo: number }): Promise<{ name: string }[]> {
-  return []
-}
+const users = new AsyncValue(async ({ orgId }: { orgId: string }) => {
+  return fetchUsers(orgId)
+})
 
-class ExampleModel {
-  constructor() { makeAutoObservable(this) }
-  activeUserId = '22'
-  files = new AsyncValue(async ({ foo }: { foo: number }) =>
-    fetchFiles({ userId: this.activeUserId, foo })
-  )
-}
-
-const example = new ExampleModel()
-example.files.value?.[0]?.name // undefined - missing data
-await example.files.query({ foo: 22 }) // foo is strongly typed, inferred!
-example.files.value?.[0]?.name // 'myFile.txt' - has data!
-example.files.error // undefined - no error
-example.files.isPending // false - we already awaited it
-
-const v = new AsyncValue(() => fetchUsersList())
-v.value // undefined
-const promise = v.query() // Don't need to provide params as none are defined
-v.isPending // true
-await promise
-v.isPending // false
-v.value // [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]
+await users.query({ orgId: 'acme' })
+users.value
+users.error
+users.isPending
 ```
 
+For query lifecycle details such as `reset()`, `clone()`, and prop-driven querying, use [SKILL.md](./SKILL.md).
 
-####  BoxedValue
+#### BoxedValue
 
-Very similar to `Value`, however, allows for the getter and setter to be defined seperately, and additionally encapsulates the observable value inside the closure.
+Very similar to `Value`, however, it allows the getter and setter to be defined separately and encapsulates the observable value inside the closure.
 
 ```tsx
-
-const blah = { something: 'banana' }
-
-const somethingFromUri = new BoxedValue(
-  // getter
-  () => uriRoutes.someRoute.search.something,
-  // setter
-  (newValue) => uriRoutes.someRoute.push((uri) => ({ search: { something: newValue } })),
+const selectedId = new BoxedValue(
+  () => route.search.userId,
+  (userId) => route.push((uri) => ({ search: { userId } })),
 )
-
-somethingFromUri.value // 'foo'
-somethingFromUri.set('bar')
-somethingFromUri.value // 'bar'
-
-// Here we omit the setter, so the value is read-only
-// This is effectively just a container encapsulating the value
-const somethingWrappedToOptimizeObservability = new BoxedValue(
-  () => blah.something,
-)
-
-somethingWrappedToOptimizeObservability.value // 'banana'
-somethingWrappedToOptimizeObservability.set('banana') // does nothing, because no setter
-  
 ```
 
-####  BoolValue
+Read `boxed.value` inside render or a computed getter so MobX can track it. See [SKILL.md](./SKILL.md) for the reactivity caveat.
 
-A `Value` that is specifically for boolean values. It has a few additional methods to make working with booleans easier.
+#### BoolValue
+
+Use for booleans with convenience helpers.
 
 ```tsx
-
-const isOpen = new BoolValue(true)
-
-isOpen.toggle() // false
-isOpen.toggle() // true
-isOpen.setFalse()
-isOpen.value // false
-isOpen.isTrue // false
+const isOpen = new BoolValue(false)
+isOpen.toggle()
 isOpen.setTrue()
-isOpen.isTrue // true
-isOpen.value // false
-
-const Example = X(() => 
-  <>
-    <button onClick={isOpen.toggle}>Open</button>
-    <Dialog onClose={isOpen.setFalse}>...</Dialog>
-  </>
-)
+isOpen.setFalse()
 ```
 
 ## Documentation
 
-- [Conventions](./Conventions.md)
-  - Plug this into your AI instructions as prompts.
+- [SKILL.md](./SKILL.md)
+  - First-class usage guide for humans and AI tooling.
+- [src/stories/demoApp](./src/stories/demoApp)
+  - Larger example app structure using xcomponent patterns.
+
+If README and [SKILL.md](./SKILL.md) ever disagree, prefer [SKILL.md](./SKILL.md).
 
 ## License
 
