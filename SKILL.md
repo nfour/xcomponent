@@ -16,6 +16,7 @@ This skill is for:
 - Creating components in projects that use a build-time auto observer wrapper
 - Replacing `observer`, `useMemo`, `useEffect`, and ad hoc MobX wiring with xcomponent patterns
 - Building local component state with `X.useState`
+- Applying the repo convention of class-based MobX state with `ctx` dependency injection
 - Working with observable props
 - Using `Value`, `AsyncValue`, `BoxedValue`, and `BoolValue`
 - Composing components with `.with()` static members
@@ -37,11 +38,23 @@ In auto-wrap mode, you still use `X` for helpers such as `X.useState`, `X.useRea
 
 The usual workflow is:
 1. Choose whether the component itself will be wrapped manually with `X(...)` or observed by a build-time auto wrapper.
-2. Create local state with `X.useState(...)`.
+2. Default to class-based state created with `X.useState(...)`.
 3. Put mutable values in `Value` or `BoolValue`.
 4. Put async request state in `AsyncValue`.
 5. Use `X.useOnMounted`, `X.useOnUnmounted`, `X.useReaction`, and `X.useAutorun` at the component or custom-hook top level.
 6. Read observable values inside render or computed getters so MobX can track them.
+
+## Project Conventions
+
+These are the preferred conventions in this codebase, even when xcomponent supports other styles.
+
+- Prefer classes for MobX state, local or global.
+- Outside `X.useState`, call `makeAutoObservable(this)` in the constructor of state classes.
+- Prefer arrow functions for class methods.
+- Use private `#methods` for implementation details that should not become observable API.
+- Prefer composition over inheritance.
+- For composed classes, use `public ctx: () => { ... }` constructor injection.
+- For global state, expose state through React context and mutate it through actions on the state classes, not directly from components.
 
 ## Public Surface
 
@@ -156,6 +169,30 @@ const selectedId = new BoxedValue(
 
 This is useful when a child should consume a value-like object without owning the underlying state.
 
+For URI-backed input state, prefer `Value.Boxed` together with `xroute` so serialization and deserialization stay explicit.
+
+```tsx
+import { Value } from '@n4s/xcomponent'
+
+class SomePageInputState {
+  constructor(public ctx: () => SomePageState) {
+    makeAutoObservable(this)
+  }
+
+  private get route() {
+    return this.ctx().ctx().router.routes.somePage
+  }
+
+  someDate = new Value.Boxed(
+    () => dayjs(this.route.search.someDate),
+    (someDate) =>
+      this.route.push({
+        search: { someDate: someDate.format('YYYY-MM-DD') },
+      }),
+  )
+}
+```
+
 ## Preferred Patterns
 
 ### 1. Basic observed component
@@ -218,6 +255,12 @@ export const Counter = X(() => {
 
 Use this as the default pattern for local state.
 
+Conventional class-state rules:
+- Prefer classes for local MobX state.
+- Prefer arrow-function methods such as `increment = () => ...`.
+- Use private `#methods` for non-observable implementation details.
+- Prefer composition over inheritance.
+
 Functional style is also supported when it is a better fit:
 
 ```tsx
@@ -234,7 +277,7 @@ const state = X.useState(() => {
 })
 ```
 
-Use class style by default for larger state objects and functional style for smaller closure-based stores.
+Use functional style only when it materially improves a very small local store. The team default is still class state.
 
 ### 3. Extract state into a custom hook
 
@@ -382,6 +425,8 @@ export const UserCard = X((props: { name: string }) => {
 
 Use this when the view is simple but the local state needs its own file.
 
+If the extracted state is a class defined outside `X.useState`, add `makeAutoObservable(this)` in its constructor unless you are deliberately controlling annotations manually.
+
 ### 8. Component composition with `.with()`
 
 ```tsx
@@ -411,7 +456,7 @@ Use this for component families like `Dialog.Header`, `Dialog.Body`, `Table.Row`
 ```tsx
 import { makeAutoObservable } from 'mobx'
 
-export class UserStore {
+export class UserState {
   constructor() {
     makeAutoObservable(this)
   }
@@ -424,7 +469,71 @@ export class UserStore {
 }
 ```
 
-For global state, use standard MobX conventions and consume that store from `X` components.
+For global state, prefer a hierarchy of discrete classes that each do one thing well.
+
+```tsx
+interface RootState {
+  routing: XRouter
+  app: AppState
+  admin: AdminState
+}
+
+interface AppState {
+  api: ApiState
+  auth: AuthState
+  pages: {
+    overview: AppOverviewState
+    editor: AppEditorState
+  }
+}
+```
+
+Global-state rules:
+- Name classes `SomethingState`.
+- Store them in `.ts` files near the feature they belong to.
+- Access them from components through React context.
+- Do not directly mutate global state from components; call actions on the state classes.
+- Keep classes focused and compose them with other classes as needed.
+- Use `ctx: () => { ... }` constructor injection for dependencies.
+
+For composed state classes, prefer `ctx` dependency injection over inheritance or broad global reach.
+
+```tsx
+class AuthState {
+  constructor(public ctx: () => ApiState) {
+    makeAutoObservable(this)
+  }
+
+  login = () => {
+    this.ctx().loginQuery()
+  }
+
+  get authToken() {
+    return this.ctx().loginQuery.value?.token
+  }
+}
+
+class ApiState {
+  constructor(public ctx: () => AuthState) {
+    makeAutoObservable(this)
+  }
+
+  loginQuery = new AsyncValue(async () => {
+    return this.fetch()
+  })
+
+  fetch = () => {
+    // request logic
+  }
+}
+
+class RootState {
+  api = new ApiState(() => this.auth)
+  auth = new AuthState(() => this.api)
+}
+```
+
+Provide the minimal dependencies to `ctx` where practical. Passing top-level state is acceptable when boundaries are not clear yet, but avoid turning everything into implicit global reach.
 
 ### 10. React hooks to replace versus keep
 
@@ -452,9 +561,10 @@ When implementing a new component with xcomponent:
 5. Use computed getters for derived values.
 6. Use `AsyncValue` for request state instead of parallel `value/loading/error` fields.
 7. If component behavior depends on prop changes, pass `props` into `X.useState(props, ...)`.
-8. If state logic starts crowding the view, extract it into a custom hook or separate state file.
-9. Put mount, unmount, autorun, and reaction logic at the component or custom-hook top level.
-10. If the component has related subcomponents or static class maps, attach them with `.with()`.
+8. If URI state is user-editable, prefer `Value.Boxed` over ad hoc parsing and syncing.
+9. If state logic starts crowding the view, extract it into a custom hook or separate state file.
+10. Put mount, unmount, autorun, and reaction logic at the component or custom-hook top level.
+11. If the component has related subcomponents or static class maps, attach them with `.with()`.
 
 When refactoring existing React or MobX code:
 
@@ -463,28 +573,35 @@ When refactoring existing React or MobX code:
 3. Move derived `useMemo` logic into MobX computed getters.
 4. Replace effect-driven prop synchronization with `X.useState(props, ...)` and computed getters or reactions.
 5. Replace manual async flags with `AsyncValue`.
+6. Move multi-class dependencies to explicit `ctx: () => { ... }` injection.
+7. Rename broad global stores toward focused `SomethingState` classes where practical.
 
 ## Caveats
 
 - `X.useState(props, ...)` keeps the store instance stable and updates the observable props object across rerenders. Do not recreate local state just to mirror props.
 - Do not destructure observable values too early if you expect reactivity. Read them at the point where MobX should track them.
 - For `BoxedValue`, the dependency is tracked when the getter is read. Read `boxed.value` inside render or a computed getter, not once outside and then reuse the plain value.
+- For URI state, keep serialization and deserialization at the `Value.Boxed` boundary rather than scattering it through components.
 - For function props that return observables, reactivity works if the function is invoked inside a computed getter or render path, but hot reload can become confusing because child state is not recreated automatically.
 - `X.useReaction` uses structural comparison by default. If you need identity semantics or different timing, pass explicit MobX reaction options.
 - `X.useReaction` and `X.useAutorun` must observe MobX state. A plain React prop or local variable is not reactive unless it is read through an observable object or value wrapper.
 - If an `AsyncValue` query depends on props, read those props from the reactive object or pass them as query payload. Do not accidentally close over first-render values.
 - Build-time auto-wrap only replaces the component-level observer wrapper. It does not replace `X.useState`, lifecycle helpers, or `.with(...)` composition.
 - If your project does not actually auto-wrap components, a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
+- When classes depend on each other cyclically during construction, defer constructor-time work until the next tick so object references exist before use.
 - `X.useOnUnmounted` is the right place for interval, timeout, subscription, and manual cleanup logic.
 - `X` sets a display name for debugging when one is not already present.
 
 ## What Good Usage Usually Looks Like
 
 - One `X.useState` store per component concern, not one per field
+- Class-based state as the default MobX style
 - Computed getters for derived data
 - `Value` and `BoolValue` for simple mutable state
 - `AsyncValue` for async state machines
+- `Value.Boxed` for URI-backed user input
 - Observable props read inside computed getters instead of copied into ad hoc React state
+- Explicit `ctx` dependency injection between composed classes
 - Reactions used for side effects, not for ordinary derivation
 
 ## When Not To Use These Patterns
