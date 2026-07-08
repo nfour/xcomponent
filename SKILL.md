@@ -13,7 +13,7 @@ Use this skill when writing or refactoring application code that consumes `@n4s/
 
 This skill is for:
 - Creating React components with `X`
-- Creating components in projects that use a build-time auto observer wrapper
+- Creating components under the strongly preferred build-time auto observer wrapper, falling back to manual `X(...)` wrapping only for edge cases
 - Replacing `observer`, `useMemo`, `useEffect`, and ad hoc MobX wiring with xcomponent patterns
 - Building local component state with `X.useState`
 - Applying the repo convention of class-based MobX state with `ctx` dependency injection
@@ -30,14 +30,16 @@ This skill is not for:
 
 `X` is a thin wrapper around `mobx-react-lite` `observer` with a few attached helpers.
 
-There are two valid component authoring modes:
-- Manual wrap mode: write components as `X((props) => ...)`
-- Build-time auto-wrap mode: write plain function components and let the compiler/plugin inject MobX observation
+There are two valid component authoring modes, but they are not equally preferred:
+- Build-time auto-wrap mode (strongly preferred): write plain function components and let a babel/swc compiler plugin inject MobX observation automatically.
+- Manual wrap mode (edge cases only): write components as `X((props) => ...)`.
+
+Default to auto-wrap mode whenever the project has the compiler plugin configured. Reach for manual `X(...)` wrapping only for edge cases, such as files the plugin excludes (for example `*.stories.tsx`) or projects that have not adopted the plugin yet. See [PATTERNS.md](../@n4s/conventions/PATTERNS.md) § Build-Time Auto-Wrap Pattern for why this is the preferred default.
 
 In auto-wrap mode, you still use `X` for helpers such as `X.useState`, `X.useReaction`, `X.useAutorun`, `X.useOnMounted`, and `X.useOnUnmounted`. What becomes optional is only the outer `X(...)` component wrapper.
 
 The usual workflow is:
-1. Choose whether the component itself will be wrapped manually with `X(...)` or observed by a build-time auto wrapper.
+1. Prefer build-time auto-wrap for the component itself; only fall back to manual `X(...)` wrapping for edge cases such as files the plugin excludes.
 2. Default to class-based state created with `X.useState(...)`.
 3. Put mutable values in `Value` or `BoolValue`.
 4. Put async request state in `AsyncValue`.
@@ -60,14 +62,14 @@ These are the preferred conventions in this codebase, even when xcomponent suppo
 
 ### `X`
 
-- `X(Component)` returns an observed component.
+- `X(Component)` returns an observed component. Prefer configuring build-time auto-wrap instead of calling this directly on ordinary components; use it explicitly only for edge cases.
 - `X(Component).with({...})` attaches static members such as subcomponents or class name maps.
 - `X` also exposes the hooks below as static members.
 
-If your project uses a build-time auto observer wrapper:
-- You may omit `X(Component)` for ordinary components.
+Strongly prefer build-time auto-wrap for ordinary components:
+- Omit `X(Component)` for ordinary components once the project has the compiler plugin configured — this is the default, not a fallback.
 - You still import `X` to access `X.useState` and the other xcomponent helpers.
-- You still need `X(Component)` when you want `.with(...)` composition on the exported component.
+- You still need `X(Component)` when you want `.with(...)` composition on the exported component, or when the file is excluded from auto-wrapping (for example `*.stories.tsx`).
 
 ### `X.useState`
 
@@ -197,17 +199,7 @@ class SomePageInputState {
 
 ### 1. Basic observed component
 
-Manual wrap mode:
-
-```tsx
-import { X } from '@n4s/xcomponent'
-
-export const UserName = X(({ name }: { name: string }) => {
-  return <span>{name}</span>
-})
-```
-
-Build-time auto-wrap mode:
+Build-time auto-wrap mode (strongly preferred):
 
 ```tsx
 import { X, Value } from '@n4s/xcomponent'
@@ -225,14 +217,24 @@ export const UserName = (props: { name: string }) => {
 }
 ```
 
-Use bare functions only when your build step really does inject MobX observation.
+Manual wrap mode (edge cases only — files excluded from the compiler plugin such as `*.stories.tsx`, or projects without the plugin configured):
+
+```tsx
+import { X } from '@n4s/xcomponent'
+
+export const UserName = X(({ name }: { name: string }) => {
+  return <span>{name}</span>
+})
+```
+
+Default to plain function components under auto-wrap. Reach for `X(...)` manual wrapping only when the plugin genuinely does not apply to that file.
 
 ### 2. Local class-based state
 
 ```tsx
 import { X, Value } from '@n4s/xcomponent'
 
-export const Counter = X(() => {
+export const Counter = () => {
   const state = X.useState(() => class {
     count = new Value(0)
 
@@ -250,10 +252,10 @@ export const Counter = X(() => {
       <button onClick={state.increment}>+</button>
     </>
   )
-})
+}
 ```
 
-Use this as the default pattern for local state.
+Use this as the default pattern for local state. This component relies on build-time auto-wrap; add `X(...)` around it only for the edge cases described above.
 
 Conventional class-state rules:
 - Prefer classes for local MobX state.
@@ -310,11 +312,11 @@ const useMyComponentState = (props: Props) => {
   return state
 }
 
-export const MyComponent = X((props: Props) => {
+export const MyComponent = (props: Props) => {
   const state = useMyComponentState(props)
 
   return <button onClick={state.increment}>{state.combinedNumber}</button>
-})
+}
 ```
 
 Use this pattern when you want Vue-like `setup()` separation without moving the state into a separate file yet.
@@ -324,7 +326,7 @@ Use this pattern when you want Vue-like `setup()` separation without moving the 
 ```tsx
 type Props = { initialCount: number; multiplier: number }
 
-export const Counter = X((props: Props) => {
+export const Counter = (props: Props) => {
   const state = X.useState(props, (props) => class {
     count = new Value(props.initialCount)
 
@@ -340,7 +342,7 @@ export const Counter = X((props: Props) => {
       {state.multiplied}
     </button>
   )
-})
+}
 ```
 
 Rules:
@@ -351,7 +353,7 @@ Rules:
 ### 5. Async data in component state
 
 ```tsx
-export const UserList = X((props: { orgId: string }) => {
+export const UserList = (props: { orgId: string }) => {
   const state = X.useState(props, (props) => class {
     props = props
     users = new AsyncValue(async () => fetchUsers(props.orgId))
@@ -368,7 +370,7 @@ export const UserList = X((props: { orgId: string }) => {
   if (state.users.error) return <div>{state.users.error.message}</div>
 
   return <div>{state.users.value?.length ?? 0}</div>
-})
+}
 ```
 
 For async work that depends on changing props or state, combine `AsyncValue` with `X.useReaction` and make sure the query function reads reactive sources.
@@ -376,7 +378,7 @@ For async work that depends on changing props or state, combine `AsyncValue` wit
 ### 6. Side effects and reactions
 
 ```tsx
-export const Example = X((props: { filter: string }) => {
+export const Example = (props: { filter: string }) => {
   const state = X.useState(props, (props) => class {
     props = props
     value = new Value('')
@@ -394,7 +396,7 @@ export const Example = X((props: { filter: string }) => {
   })
 
   return <input value={state.value.value} />
-})
+}
 ```
 
 Treat these like React hooks:
@@ -416,11 +418,11 @@ export class UserCardState {
   }
 }
 
-export const UserCard = X((props: { name: string }) => {
+export const UserCard = (props: { name: string }) => {
   const state = X.useState(props, (props) => new UserCardState(props))
 
   return <button onClick={state.expanded.toggle}>{state.title}</button>
-})
+}
 ```
 
 Use this when the view is simple but the local state needs its own file.
@@ -428,6 +430,8 @@ Use this when the view is simple but the local state needs its own file.
 If the extracted state is a class defined outside `X.useState`, add `makeAutoObservable(this)` in its constructor unless you are deliberately controlling annotations manually.
 
 ### 8. Component composition with `.with()`
+
+`.with()` is one of the few places manual `X(...)` wrapping is required even under auto-wrap, because `.with()` needs the object `X(...)` returns in order to attach static members.
 
 ```tsx
 const Dialog = X(({ children }: { children: React.ReactNode }) => {
@@ -554,7 +558,7 @@ The goal is not to ban React hooks. The goal is to avoid using React hooks to si
 
 When implementing a new component with xcomponent:
 
-1. Start with either `X((props) => ...)` or a plain function component if the project uses build-time auto observer wrapping.
+1. Start with a plain function component under build-time auto-wrap; only start with `X((props) => ...)` for edge cases where the plugin does not apply.
 2. Decide whether local state is needed.
 3. If state is needed, default to `X.useState(() => class { ... })`.
 4. Use `Value` or `BoolValue` for scalar mutable state.
@@ -568,7 +572,7 @@ When implementing a new component with xcomponent:
 
 When refactoring existing React or MobX code:
 
-1. Replace `observer(...)` with `X(...)`, or with a plain function component if the project has a build-time auto observer wrapper.
+1. Replace `observer(...)` with a plain function component under build-time auto-wrap; use `X(...)` only for edge cases the plugin doesn't cover.
 2. Collapse local `useState` values into a single `X.useState` store when the values belong together.
 3. Move derived `useMemo` logic into MobX computed getters.
 4. Replace effect-driven prop synchronization with `X.useState(props, ...)` and computed getters or reactions.
@@ -587,6 +591,7 @@ When refactoring existing React or MobX code:
 - `X.useReaction` and `X.useAutorun` must observe MobX state. A plain React prop or local variable is not reactive unless it is read through an observable object or value wrapper.
 - If an `AsyncValue` query depends on props, read those props from the reactive object or pass them as query payload. Do not accidentally close over first-render values.
 - Build-time auto-wrap only replaces the component-level observer wrapper. It does not replace `X.useState`, lifecycle helpers, or `.with(...)` composition.
+- Auto-wrap plugins commonly exclude certain file patterns (for example `*.stories.tsx`); for files outside its scope, wrap manually with `X(...)`.
 - If your project does not actually auto-wrap components, a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
 - When classes depend on each other cyclically during construction, defer constructor-time work until the next tick so object references exist before use.
 - `X.useOnUnmounted` is the right place for interval, timeout, subscription, and manual cleanup logic.
@@ -612,5 +617,6 @@ When refactoring existing React or MobX code:
 
 ## Further References
 
-- `README.md` for the compact public overview
-- `src/stories/demoApp` for a larger end-to-end example structure
+- [README.md](./README.md) for the compact public overview
+- [PATTERNS.md](../@n4s/conventions/PATTERNS.md) for the named pattern catalog this skill implements
+- [src/stories/demoApp](./src/stories/demoApp) for a larger end-to-end example structure

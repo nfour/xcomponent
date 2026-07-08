@@ -226,6 +226,8 @@ isOpen.setFalse()
 
 - [SKILL.md](./SKILL.md)
   - First-class usage guide for humans and AI tooling.
+- [PATTERNS.md](../@n4s/conventions/PATTERNS.md)
+  - Named, cross-referenced catalog of the design patterns used across xcomponent and the related MobX/React/XRoute conventions.
 - [src/stories/demoApp](./src/stories/demoApp)
   - Larger example app structure using xcomponent patterns.
 
