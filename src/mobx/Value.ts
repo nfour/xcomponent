@@ -34,6 +34,19 @@ export class Value<STATE = any> {
   static Boxed = BoxedValue;
 }
 
+/**
+ * Type-only companion to the `Value` class, merged via TypeScript's class/namespace
+ * declaration merging. This makes `Value.Async<T, P>`, `Value.Boxed<GET, SET>`, and
+ * `Value.Bool` valid as both runtime constructors (`new Value.Async(...)`) and as
+ * type annotations (`users: Value.Async<IUser[]>`).
+ */
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Value {
+  export type Async<VALUE, PAYLOAD = any> = AsyncValue<VALUE, PAYLOAD>;
+  export type Boxed<GET extends unknown, SET extends GET = GET> = BoxedValue<GET, SET>;
+  export type Bool = BoolValue;
+}
+
 // interface Foo {
 //   a: Value<string>;
 //   b: typeof Value.Async

@@ -13,9 +13,9 @@ A microframework that combines MobX and React to solve common performance, state
   + [Core](#core)
   + [Models](#models)
     + [Value](#value)
-    + [AsyncValue](#asyncvalue)
-    + [BoxedValue](#boxedvalue)
-    + [BoolValue](#boolvalue)
+    + [Value.Async](#valueasync)
+    + [Value.Boxed](#valueboxed)
+    + [Value.Bool](#valuebool)
 + [Documentation](#documentation)
 + [License](#license)
 
@@ -164,9 +164,9 @@ See [SKILL.md](./SKILL.md) for the full composition guidance and usage patterns.
 ### Models
 
 - `Value<T>` - Observable value container
-- `AsyncValue<T>` - Async state container with pending/error/value states
-- `BoxedValue<T>` - Encapsulated observable with custom getter/setter
-- `BoolValue` - Boolean value with toggle utilities
+- `Value.Async<T>` - Async state container with pending/error/value states
+- `Value.Boxed<T>` - Encapsulated observable with custom getter/setter
+- `Value.Bool` - Boolean value with toggle utilities
 
 For workflow guidance on when to choose each model, use [SKILL.md](./SKILL.md).
 
@@ -181,12 +181,12 @@ selectedFruit.set('banana') // Valid
 selectedFruit.value // 'banana'
 ```
 
-#### AsyncValue
+#### Value.Async
 
 Think of `react-query` for this one. It is a `Value` that can be in a loading state, and can be awaited.
 
 ```tsx
-const users = new AsyncValue(async ({ orgId }: { orgId: string }) => {
+const users = new Value.Async(async ({ orgId }: { orgId: string }) => {
   return fetchUsers(orgId)
 })
 
@@ -198,12 +198,12 @@ users.isPending
 
 For query lifecycle details such as `reset()`, `clone()`, and prop-driven querying, use [SKILL.md](./SKILL.md).
 
-#### BoxedValue
+#### Value.Boxed
 
 Very similar to `Value`, however, it allows the getter and setter to be defined separately and encapsulates the observable value inside the closure.
 
 ```tsx
-const selectedId = new BoxedValue(
+const selectedId = new Value.Boxed(
   () => route.search.userId,
   (userId) => route.push((uri) => ({ search: { userId } })),
 )
@@ -211,12 +211,12 @@ const selectedId = new BoxedValue(
 
 Read `boxed.value` inside render or a computed getter so MobX can track it. See [SKILL.md](./SKILL.md) for the reactivity caveat.
 
-#### BoolValue
+#### Value.Bool
 
 Use for booleans with convenience helpers.
 
 ```tsx
-const isOpen = new BoolValue(false)
+const isOpen = new Value.Bool(false)
 isOpen.toggle()
 isOpen.setTrue()
 isOpen.setFalse()
@@ -226,8 +226,6 @@ isOpen.setFalse()
 
 - [SKILL.md](./SKILL.md)
   - First-class usage guide for humans and AI tooling.
-- [Conventions SKILL.md](../@n4s/conventions/SKILL.md)
-  - Comprehensive TypeScript frontend skill tying together React, MobX, XComponent, and XRoute conventions and named design patterns.
 - [src/stories/demoApp](./src/stories/demoApp)
   - Larger example app structure using xcomponent patterns.
 
