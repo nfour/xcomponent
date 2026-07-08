@@ -34,7 +34,7 @@ There are two valid component authoring modes, but they are not equally preferre
 - Build-time auto-wrap mode (strongly preferred): write plain function components and let a babel/swc compiler plugin inject MobX observation automatically.
 - Manual wrap mode (edge cases only): write components as `X((props) => ...)`.
 
-Default to auto-wrap mode whenever the project has the compiler plugin configured. Reach for manual `X(...)` wrapping only for edge cases, such as files the plugin excludes (for example `*.stories.tsx`) or projects that have not adopted the plugin yet. See [PATTERNS.md](../@n4s/conventions/PATTERNS.md) § Build-Time Auto-Wrap Pattern for why this is the preferred default.
+Default to auto-wrap mode whenever the project has the compiler plugin configured. Reach for manual `X(...)` wrapping only for edge cases, such as files the plugin excludes (for example `*.stories.tsx`) or projects that have not adopted the plugin yet. See [Conventions SKILL.md](../@n4s/conventions/SKILL.md) § Build-Time Auto-Wrap Pattern for why this is the preferred default.
 
 In auto-wrap mode, you still use `X` for helpers such as `X.useState`, `X.useReaction`, `X.useAutorun`, `X.useOnMounted`, and `X.useOnUnmounted`. What becomes optional is only the outer `X(...)` component wrapper.
 
@@ -618,5 +618,5 @@ When refactoring existing React or MobX code:
 ## Further References
 
 - [README.md](./README.md) for the compact public overview
-- [PATTERNS.md](../@n4s/conventions/PATTERNS.md) for the named pattern catalog this skill implements
+- [Conventions SKILL.md](../@n4s/conventions/SKILL.md) for the comprehensive TypeScript frontend skill and named pattern catalog this skill implements
 - [src/stories/demoApp](./src/stories/demoApp) for a larger end-to-end example structure
