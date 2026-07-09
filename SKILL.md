@@ -31,7 +31,7 @@ This skill is not for:
 `X` is a thin wrapper around `mobx-react-lite` `observer` with a few attached helpers.
 
 There are two valid component authoring modes, but they are not equally preferred:
-- Build-time auto-wrap mode (strongly preferred): write plain function components and let a babel/swc compiler plugin inject MobX observation automatically.
+- Build-time auto-wrap mode (strongly preferred): write plain function components and let the [`mobx-react-observer`](https://github.com/christianalfoni/mobx-react-observer) Vite plugin inject MobX observation automatically.
 - Manual wrap mode (edge cases only): write components as `X((props) => ...)`.
 
 Default to auto-wrap mode whenever the project has the compiler plugin configured. Reach for manual `X(...)` wrapping only for edge cases, such as files the plugin excludes (for example `*.stories.tsx`) or projects that have not adopted the plugin yet.
@@ -52,7 +52,7 @@ This skill assumes the auto-wrap plugin is already configured for the project; c
 
 ```ts
 import reactPlugin from "@vitejs/plugin-react";
-import observingComponentsPlugin from "babel-plugin-observing-components";
+import observerPlugin from "mobx-react-observer/vite-plugin";
 import { join, resolve } from "path";
 import { defineConfig } from "vite";
 
@@ -64,14 +64,8 @@ export const tildeImportAlias = (o: { absoluteFolderPath: string }) => ({
 
 export default defineConfig({
   plugins: [
-    reactPlugin({
-      jsxImportSource: "@emotion/react",
-      babel: {
-        plugins: [
-          observingComponentsPlugin({ importPath: "@n4s/xcomponent", importName: "X" }),
-        ],
-      },
-    }),
+    reactPlugin({ jsxImportSource: "@emotion/react" }),
+    observerPlugin({ exclude: ["**/*.stories.tsx"] }),
   ],
   // ...
   resolve: {
@@ -83,8 +77,11 @@ export default defineConfig({
 ```
 
 Notable details:
-- `babel-plugin-observing-components` is the plugin that wraps every component export in `X`/`observer`.
-- `*.stories.tsx` is typically excluded from wrapping (Storybook has trouble with the wrapped form) — see the Caveats section.
+- `mobx-react-observer` (`npm install mobx-react-observer`) is the package that wraps every component export in `observer` (re-exported from `mobx-react-lite`, the same implementation `X` wraps) — the same rendering behavior as `X(Component)`.
+- It is a standalone Vite plugin, not a babel-preset addition — add it as its own entry in `plugins`, independent from `@vitejs/plugin-react`'s `babel` option. It works with any Vite version and either underlying transformer (SWC or Babel), so no babel config is required.
+- The predecessor `babel-plugin-observing-components`/`swc-plugin-observing-components` packages are deprecated; do not add new setups with them. Existing projects should migrate to `mobx-react-observer`.
+- `*.stories.tsx` is typically excluded from wrapping (Storybook has trouble with the wrapped form) via the `exclude` option — see the Caveats section.
+- For server-side rendering, call `enableStaticRendering(typeof window === "undefined")` (also exported from `mobx-react-observer`) once at app startup.
 - This example also wires up an unrelated `~/` import alias, shown because it's commonly configured alongside the auto-wrap plugin in this stack.
 
 ## Project Conventions
@@ -669,8 +666,8 @@ When refactoring existing React or MobX code:
 - `X.useReaction` and `X.useAutorun` must observe MobX state. A plain React prop or local variable is not reactive unless it is read through an observable object or value wrapper.
 - If a `Value.Async` query depends on props, read those props from the reactive object or pass them as query payload. Do not accidentally close over first-render values.
 - Build-time auto-wrap only replaces the component-level observer wrapper. It does not replace `X.useState`, lifecycle helpers, or `.with(...)` composition.
-- Auto-wrap plugins commonly exclude certain file patterns (for example `*.stories.tsx`); for files outside its scope, wrap manually with `X(...)`.
-- If your project does not actually auto-wrap components, a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
+- The `mobx-react-observer` Vite plugin's `exclude` option commonly excludes certain file patterns (for example `*.stories.tsx`); for files outside its scope, wrap manually with `X(...)`.
+- If your project does not actually auto-wrap components (`mobx-react-observer` not configured), a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
 - When classes depend on each other cyclically during construction, defer constructor-time work until the next tick so object references exist before use.
 - `X.useOnUnmounted` is the right place for interval, timeout, subscription, and manual cleanup logic.
 - `X` sets a display name for debugging when one is not already present.
