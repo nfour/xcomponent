@@ -13,8 +13,13 @@
     "noEmit": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "~/*": ["./src/stories/demoApp/*"]
+      "~/*": [
+        "./src/stories/demoApp/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

@@ -9,6 +9,13 @@
     "noEmit": false,
     "jsxImportSource": null
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/stories/**", "src/**/__tests__/**", "src/**/*.spec.*"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "src/stories/**",
+    "src/**/__tests__/**",
+    "src/**/*.spec.*"
+  ]
 }
