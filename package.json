@@ -1,6 +1,6 @@
 {
   "name": "@n4s/xcomponent",
-  "version": "6.2.0",
+  "version": "7.0.0",
   "private": false,
   "type": "module",
   "packageManager": "pnpm@10.3.0",
