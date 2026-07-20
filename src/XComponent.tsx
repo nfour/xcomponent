@@ -6,8 +6,8 @@ import {
   useOnUnmounted,
   useReaction,
   useState,
-} from './hooks';
-import { setComponentNameForDebugging } from './utils';
+} from './hooks.js';
+import { setComponentNameForDebugging } from './utils.js';
 
 /**
  * A `observer` wrapped component with type support for static props

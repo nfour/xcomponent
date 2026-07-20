@@ -5,7 +5,7 @@
     "target": "ES2022",
     "outDir": "./x",
     "declaration": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
@@ -13,13 +13,8 @@
     "noEmit": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "~/*": [
-        "./src/stories/demoApp/*"
-      ],
+      "~/*": ["./src/stories/demoApp/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
+  "include": ["**/*.ts", "**/*.tsx"]
 }

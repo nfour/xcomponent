@@ -2,17 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "es2019",
+    "lib": ["ES2022"],
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    "rootDir": "./src",
     "outDir": "./x/cjs",
     "noEmit": false,
     "jsx": "react-jsx",
     "jsxImportSource": null
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/stories/**"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/stories/**", "src/**/__tests__/**", "src/**/*.spec.*"]
 }

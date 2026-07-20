@@ -1,7 +1,7 @@
 import { observable, makeObservable, action } from 'mobx';
-import { AsyncValue } from './AsyncValue';
-import { BoolValue } from './BoolValue';
-import { BoxedValue } from './BoxedValue';
+import { AsyncValue } from './AsyncValue.js';
+import { BoolValue } from './BoolValue.js';
+import { BoxedValue } from './BoxedValue.js';
 
 /**
  * An easier way to handle simple value getter/setter.
@@ -43,7 +43,10 @@ export class Value<STATE = any> {
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Value {
   export type Async<VALUE, PAYLOAD = any> = AsyncValue<VALUE, PAYLOAD>;
-  export type Boxed<GET extends unknown, SET extends GET = GET> = BoxedValue<GET, SET>;
+  export type Boxed<GET extends unknown, SET extends GET = GET> = BoxedValue<
+    GET,
+    SET
+  >;
   export type Bool = BoolValue;
 }
 

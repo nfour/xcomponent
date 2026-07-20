@@ -6,7 +6,7 @@ import {
   isObservable,
   runInAction,
 } from 'mobx';
-import { useEffect, useState as useReactState } from 'react';
+import { isValidElement, useEffect, useState as useReactState } from 'react';
 import { isDeepEqual } from 'remeda';
 
 export const useReaction: typeof reaction = (fn1, fn2, opts): any => {
@@ -109,11 +109,74 @@ export const useOnUnmounted = (fn: () => void) => {
   useEffect(() => fn, []);
 };
 
+/** Finds the keys (or `key.nestedKey` for one level of array/object nesting) whose values are React elements */
+function findReactElementPropPaths(value: Record<string, any>): string[] {
+  const paths: string[] = [];
+
+  for (const [key, propValue] of Object.entries(value)) {
+    if (isValidElement(propValue)) {
+      paths.push(key);
+
+      continue;
+    }
+
+    if (Array.isArray(propValue)) {
+      if (propValue.some(isValidElement)) paths.push(`${key}[]`);
+
+      continue;
+    }
+
+    if (propValue && typeof propValue === 'object') {
+      for (const nestedKey of Object.keys(propValue)) {
+        if (isValidElement(propValue[nestedKey]))
+          paths.push(`${key}.${nestedKey}`);
+      }
+    }
+  }
+
+  return paths;
+}
+
+/**
+ * Throws a clearer error when `useObjectStore`'s makeAutoObservable call fails because
+ * the props contain React elements (which mobx cannot/should not make observable).
+ * Otherwise rethrows the original error.
+ */
+function enhanceObservablePropsError(
+  error: unknown,
+  value: Record<string, any>,
+): never {
+  const reactElementPropPaths = findReactElementPropPaths(value);
+
+  if (reactElementPropPaths.length) {
+    throw new Error(
+      `useObjectStore: React elements cannot be made observable. Found React element(s) at ` +
+        `prop path(s) [${reactElementPropPaths.join(
+          ', ',
+        )}]. Pass a function that returns ` +
+        `the element instead of the element itself, e.g.\n\n` +
+        `// bad\nsomeProp: <>Foo</>\n\n` +
+        `// good\nsomeProp: () => <>Foo</>`,
+      { cause: error },
+    );
+  }
+
+  throw error;
+}
+
 /**
  *  Creates a mobx store on mount, then synchronizes input props into the store, only updating with prop changes
  */
 export function useObjectStore<P extends Record<string, any>>(value: P) {
-  const [store] = useReactState(() => makeAutoObservable({ value }));
+  const [store] = useReactState(() => {
+    try {
+      return makeAutoObservable({ value });
+    } catch (error) {
+      enhanceObservablePropsError(error, value);
+
+      return { value };
+    }
+  });
 
   useEffect(() => {
     runInAction(() => {

@@ -2,22 +2,22 @@
 
 A microframework that combines MobX and React to solve common performance, state management, and lifecycle issues.
 
-+ [Install](#install)
-+ [Features](#features)
-+ [Usage](#usage)
-  + [Basic Component](#basic-component)
-  + [Inline State](#inline-state)
-  + [Lifecycle Hooks](#lifecycle-hooks)
-  + [Component Composition](#component-composition)
-+ [API](#api)
-  + [Core](#core)
-  + [Models](#models)
-    + [Value](#value)
-    + [Value.Async](#valueasync)
-    + [Value.Boxed](#valueboxed)
-    + [Value.Bool](#valuebool)
-+ [Documentation](#documentation)
-+ [License](#license)
+- [Install](#install)
+- [Features](#features)
+- [Usage](#usage)
+  - [Basic Component](#basic-component)
+  - [Inline State](#inline-state)
+  - [Lifecycle Hooks](#lifecycle-hooks)
+  - [Component Composition](#component-composition)
+- [API](#api)
+  - [Core](#core)
+  - [Models](#models)
+    - [Value](#value)
+    - [Value.Async](#valueasync)
+    - [Value.Boxed](#valueboxed)
+    - [Value.Bool](#valuebool)
+- [Documentation](#documentation)
+- [License](#license)
 
 ## Install
 
@@ -39,34 +39,44 @@ For day-to-day usage, treat [SKILL.md](./SKILL.md) as the primary guide. It is t
 
 Use this README for the compact overview. Use [SKILL.md](./SKILL.md) for the authoritative workflow, caveats, and expanded examples.
 
+Import `X`, `Value`, and the other public helpers from `@n4s/xcomponent`:
+
+```tsx
+import { X, Value } from '@n4s/xcomponent';
+```
+
 ### Basic Component
 
 Manual wrap mode:
 
 ```tsx
-import { X } from '@n4s/xcomponent'
+import { X } from '@n4s/xcomponent';
 
 export const UserName = X(({ name }: { name: string }) => {
-  return <span>{name}</span>
-})
+  return <span>{name}</span>;
+});
 ```
 
-Build-time auto-wrap mode:
+Build-time auto-wrap mode with `vite-plugin-observing-components`:
 
 ```tsx
-import { X, Value } from '@n4s/xcomponent'
+import { X, Value } from '@n4s/xcomponent';
 
 export const UserName = (props: { name: string }) => {
-  const state = X.useState(props, (props) => class {
-    prefix = new Value('User:')
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        prefix = new Value('User:');
 
-    get label() {
-      return `${this.prefix.value} ${props.name}`
-    }
-  })
+        get label() {
+          return `${this.prefix.value} ${props.name}`;
+        }
+      },
+  );
 
-  return <span>{state.label}</span>
-}
+  return <span>{state.label}</span>;
+};
 ```
 
 Use bare functions only when your build step really does inject MobX observation.
@@ -74,18 +84,21 @@ Use bare functions only when your build step really does inject MobX observation
 ### Inline State
 
 ```tsx
-import { X, Value } from '@n4s/xcomponent'
+import { X, Value } from '@n4s/xcomponent';
 
 export const Counter = X(() => {
-  const state = X.useState(() => class {
-    count = new Value(0)
+  const state = X.useState(
+    () =>
+      class {
+        count = new Value(0);
 
-    get doubled() {
-      return this.count.value * 2
-    }
+        get doubled() {
+          return this.count.value * 2;
+        }
 
-    increment = () => this.count.set(this.count.value + 1)
-  })
+        increment = () => this.count.set(this.count.value + 1);
+      },
+  );
 
   return (
     <>
@@ -93,8 +106,8 @@ export const Counter = X(() => {
       <div>{state.doubled}</div>
       <button onClick={state.increment}>+</button>
     </>
-  )
-})
+  );
+});
 ```
 
 For observable props, custom-hook extraction, and functional-state variants, use [SKILL.md](./SKILL.md).
@@ -106,22 +119,22 @@ The goal of this library is to avoid using hooks from `react` during normal stat
 ```tsx
 X.useOnMounted(() => {
   // Called when component mounts
-})
+});
 
 X.useOnUnmounted(() => {
   // Called when component unmounts
-})
+});
 
 X.useReaction(
   () => state.someValue,
   (newValue) => {
     // Called on first render, and whenever observable dependencies change
-  }
-)
+  },
+);
 
 X.useAutorun(() => {
   // Called on first render, and whenever observable dependencies change
-})
+});
 ```
 
 `X.useReaction` uses `fireImmediately: true` and structural comparison by default. See [SKILL.md](./SKILL.md) for the caveats around observable tracking and prop-driven reactions.
@@ -132,20 +145,20 @@ Use `.with()` to attach subcomponents or static class maps.
 
 ```tsx
 const Dialog = X(({ children }: { children: React.ReactNode }) => {
-  return <div className={Dialog.classes.root}>{children}</div>
+  return <div className={Dialog.classes.root}>{children}</div>;
 }).with({
   Header: X(({ children }: { children: React.ReactNode }) => {
-    return <header className={Dialog.classes.header}>{children}</header>
+    return <header className={Dialog.classes.header}>{children}</header>;
   }),
   Body: X(({ children }: { children: React.ReactNode }) => {
-    return <section className={Dialog.classes.body}>{children}</section>
+    return <section className={Dialog.classes.body}>{children}</section>;
   }),
   classes: {
     root: 'dialog-root',
     header: 'dialog-header',
     body: 'dialog-body',
   },
-})
+});
 ```
 
 See [SKILL.md](./SKILL.md) for the full composition guidance and usage patterns.
@@ -175,10 +188,10 @@ For workflow guidance on when to choose each model, use [SKILL.md](./SKILL.md).
 The `Value` class is effectively `observable.box` of interface `{ value: T, set: (value: T) => void }`.
 
 ```tsx
-const selectedFruit = new Value<'banana'|'apple'|undefined>(undefined)
-selectedFruit.set('test') // TS error
-selectedFruit.set('banana') // Valid
-selectedFruit.value // 'banana'
+const selectedFruit = new Value<'banana' | 'apple' | undefined>(undefined);
+selectedFruit.set('test'); // TS error
+selectedFruit.set('banana'); // Valid
+selectedFruit.value; // 'banana'
 ```
 
 #### Value.Async
@@ -187,13 +200,13 @@ Think of `react-query` for this one. It is a `Value` that can be in a loading st
 
 ```tsx
 const users = new Value.Async(async ({ orgId }: { orgId: string }) => {
-  return fetchUsers(orgId)
-})
+  return fetchUsers(orgId);
+});
 
-await users.query({ orgId: 'acme' })
-users.value
-users.error
-users.isPending
+await users.query({ orgId: 'acme' });
+users.value;
+users.error;
+users.isPending;
 ```
 
 For query lifecycle details such as `reset()`, `clone()`, and prop-driven querying, use [SKILL.md](./SKILL.md).
@@ -206,7 +219,7 @@ Very similar to `Value`, however, it allows the getter and setter to be defined 
 const selectedId = new Value.Boxed(
   () => route.search.userId,
   (userId) => route.push((uri) => ({ search: { userId } })),
-)
+);
 ```
 
 Read `boxed.value` inside render or a computed getter so MobX can track it. See [SKILL.md](./SKILL.md) for the reactivity caveat.
@@ -216,10 +229,10 @@ Read `boxed.value` inside render or a computed getter so MobX can track it. See 
 Use for booleans with convenience helpers.
 
 ```tsx
-const isOpen = new Value.Bool(false)
-isOpen.toggle()
-isOpen.setTrue()
-isOpen.setFalse()
+const isOpen = new Value.Bool(false);
+isOpen.toggle();
+isOpen.setTrue();
+isOpen.setFalse();
 ```
 
 ## Documentation

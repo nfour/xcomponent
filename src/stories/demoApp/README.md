@@ -3,16 +3,16 @@
 This is a demo app that shows how to scaffold a project with xcomponent and xroute.
 
 Features:
+
 - Fast and easy to use routing
 - Fast and easy to use state management
 - Conherent convention for structuring an app
 
-+ [Routing with XRoute](#routing-with-xroute)
-+ [`ctx` pure dependency injection pattern](#ctx-pure-dependency-injection-pattern)
-+ [Sharing global state with local state](#sharing-global-state-with-local-state)
-+ [Sharing state via props (Boxed values)](#sharing-state-via-props-boxed-values)
-+ [Sharing state via props (fn closures)](#sharing-state-via-props-fn-closures)
-
+* [Routing with XRoute](#routing-with-xroute)
+* [`ctx` pure dependency injection pattern](#ctx-pure-dependency-injection-pattern)
+* [Sharing global state with local state](#sharing-global-state-with-local-state)
+* [Sharing state via props (Boxed values)](#sharing-state-via-props-boxed-values)
+* [Sharing state via props (fn closures)](#sharing-state-via-props-fn-closures)
 
 ## Routing with XRoute
 
@@ -30,31 +30,33 @@ Nested classes within global scope utilize this pattern to handle dependency inj
 
 ```typescript
 class Root {
-   auth = new Auth();
-   api = new Api(() => this); // or { auth: this.auth }
+  auth = new Auth();
+  api = new Api(() => this); // or { auth: this.auth }
 }
 
 class Auth {
   // imagine fetch, and login, accessToken being available here.
 
-  accessToken = new Value<string|null>(null)
+  accessToken = new Value<string | null>(null);
 
   login = async (username: string, password: string) => {
     // login logic to set accessToken
-  }
+  };
 
   fetch = async (url: string) => {
     // fetch with accessToken
-  }
+  };
 }
 
 class Api {
-    constructor(public ctx: () => { auth: Auth }) {}
+  constructor(public ctx: () => { auth: Auth }) {}
 
-    users = new AsyncValue(() => this, async () => 
+  users = new AsyncValue(
+    () => this,
+    async () =>
       // Here we access the `auth` context from within the `api` context
-      await this.ctx().auth.fetch('/api/users')
-    );
+      await this.ctx().auth.fetch('/api/users'),
+  );
 }
 ```
 
@@ -76,17 +78,20 @@ Just make sure not to destructure before using signal values as that would break
 const MyComponent = X(() => {
   const { api } = useRootState();
 
-  const state = X.useState(() => class {
-    get users() {
-      return api.users.value;
-    }
-    get userCount() {
-      return this.users.length;
-    }
-  })
+  const state = X.useState(
+    () =>
+      class {
+        get users() {
+          return api.users.value;
+        }
+        get userCount() {
+          return this.users.length;
+        }
+      },
+  );
 
   // ...
-})
+});
 ```
 
 ## Sharing state via props (Boxed values)
@@ -139,11 +144,10 @@ const MyComponent = X((props: { users: AsyncValue<IUsers> }) => {
 
 Alternatively you may provide observables within the return value of a function, provided as a prop. This ensures that the observables are accessed upon function execution, and this also preserves the dependency tracking.
 
-
 **Warning**:
 There is an issue with this, however. Within the context of development, hot reloading may be affected by this pattern. This is because the function content may be edited in the parent component, however the child component will not re-create its state using that new function. This can lead to weird issues where you update code and you don't see the changes reflected in the child component.
 
-To see the changes, you must refresh the page. 
+To see the changes, you must refresh the page.
 
 It is recommended that one does not use this pattern unless you are aware of the implications within development. It does not have any production implications.
 
@@ -166,4 +170,3 @@ const MyComponent = X(({ users }: { users: () => IUsers }) => {
 
 <MyComponent users={() => someApi.users.value} />
 ```
-

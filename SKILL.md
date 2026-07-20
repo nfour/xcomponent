@@ -12,6 +12,7 @@ user-invocable: true
 Use this skill when writing or refactoring application code that consumes `@n4s/xcomponent`.
 
 This skill is for:
+
 - Creating React components with `X`
 - Creating components under the strongly preferred build-time auto observer wrapper, falling back to manual `X(...)` wrapping only for edge cases
 - Replacing `observer`, `useMemo`, `useEffect`, and ad hoc MobX wiring with xcomponent patterns
@@ -22,6 +23,7 @@ This skill is for:
 - Composing components with `.with()` static members
 
 This skill is not for:
+
 - Changing xcomponent internals
 - Designing new public APIs for the library
 - Debugging bundler or TypeScript configuration outside normal library consumption
@@ -30,8 +32,15 @@ This skill is not for:
 
 `X` is a thin wrapper around `mobx-react-lite` `observer` with a few attached helpers.
 
+Import `X`, `Value`, and the other public helpers from the package root:
+
+```tsx
+import { X, Value } from '@n4s/xcomponent';
+```
+
 There are two valid component authoring modes, but they are not equally preferred:
-- Build-time auto-wrap mode (strongly preferred): write plain function components and let the [`mobx-react-observer`](https://github.com/christianalfoni/mobx-react-observer) Vite plugin inject MobX observation automatically.
+
+- Build-time auto-wrap mode (strongly preferred): write plain function components and let the [`vite-plugin-observing-components`](https://github.com/christianalfoni/observing-components) Vite plugin inject MobX observation automatically.
 - Manual wrap mode (edge cases only): write components as `X((props) => ...)`.
 
 Default to auto-wrap mode whenever the project has the compiler plugin configured. Reach for manual `X(...)` wrapping only for edge cases, such as files the plugin excludes (for example `*.stories.tsx`) or projects that have not adopted the plugin yet.
@@ -39,6 +48,7 @@ Default to auto-wrap mode whenever the project has the compiler plugin configure
 In auto-wrap mode, you still use `X` for helpers such as `X.useState`, `X.useReaction`, `X.useAutorun`, `X.useOnMounted`, and `X.useOnUnmounted`. What becomes optional is only the outer `X(...)` component wrapper.
 
 The usual workflow is:
+
 1. Prefer build-time auto-wrap for the component itself; only fall back to manual `X(...)` wrapping for edge cases such as files the plugin excludes.
 2. Default to class-based state created with `X.useState(...)`.
 3. Put mutable values in `Value` or `Value.Bool`.
@@ -51,37 +61,41 @@ The usual workflow is:
 This skill assumes the auto-wrap plugin is already configured for the project; configuring a build from scratch is outside this skill's scope. The following is a reference example of what that setup looks like, useful when reading or troubleshooting a project's existing config.
 
 ```ts
-import reactPlugin from "@vitejs/plugin-react";
-import observerPlugin from "mobx-react-observer/vite-plugin";
-import { join, resolve } from "path";
-import { defineConfig } from "vite";
+import reactPlugin from '@vitejs/plugin-react';
+import { join, resolve } from 'path';
+import { defineConfig } from 'vite';
+import { observingComponents } from 'vite-plugin-observing-components';
 
 /** Use this to resolve ~ alias to the absoluteFolderPath for imports */
 export const tildeImportAlias = (o: { absoluteFolderPath: string }) => ({
   find: /^~\/(.+)/,
-  replacement: join(o.absoluteFolderPath, "$1"),
+  replacement: join(o.absoluteFolderPath, '$1'),
 });
 
 export default defineConfig({
   plugins: [
-    reactPlugin({ jsxImportSource: "@emotion/react" }),
-    observerPlugin({ exclude: ["**/*.stories.tsx"] }),
+    reactPlugin({ jsxImportSource: '@emotion/react' }),
+    observingComponents({
+      importPath: 'mobx-react-lite',
+      exclude: ['**/*.stories.tsx'],
+    }),
   ],
   // ...
   resolve: {
     alias: [
-      tildeImportAlias({ absoluteFolderPath: resolve(__dirname, "src") }),
+      tildeImportAlias({ absoluteFolderPath: resolve(__dirname, 'src') }),
     ],
   },
 });
 ```
 
 Notable details:
-- `mobx-react-observer` (`npm install mobx-react-observer`) is the package that wraps every component export in `observer` (re-exported from `mobx-react-lite`, the same implementation `X` wraps) — the same rendering behavior as `X(Component)`.
+
+- `vite-plugin-observing-components` (`pnpm add -D vite-plugin-observing-components`) wraps every component export in `observer` from `mobx-react-lite`, the same implementation `X` wraps. This produces the same rendering behavior as `X(Component)`.
 - It is a standalone Vite plugin, not a babel-preset addition — add it as its own entry in `plugins`, independent from `@vitejs/plugin-react`'s `babel` option. It works with any Vite version and either underlying transformer (SWC or Babel), so no babel config is required.
-- The predecessor `babel-plugin-observing-components`/`swc-plugin-observing-components` packages are deprecated; do not add new setups with them. Existing projects should migrate to `mobx-react-observer`.
+- The predecessor `babel-plugin-observing-components`/`swc-plugin-observing-components` packages are deprecated; do not add new setups with them. Existing projects should migrate to `vite-plugin-observing-components`.
 - `*.stories.tsx` is typically excluded from wrapping (Storybook has trouble with the wrapped form) via the `exclude` option — see the Caveats section.
-- For server-side rendering, call `enableStaticRendering(typeof window === "undefined")` (also exported from `mobx-react-observer`) once at app startup.
+- For server-side rendering, call `enableStaticRendering(typeof window === "undefined")` from `mobx-react-lite` once at app startup.
 - This example also wires up an unrelated `~/` import alias, shown because it's commonly configured alongside the auto-wrap plugin in this stack.
 
 ## Project Conventions
@@ -106,6 +120,7 @@ These are the preferred conventions in this codebase, even when xcomponent suppo
 - `X` also exposes the hooks below as static members.
 
 Strongly prefer build-time auto-wrap for ordinary components:
+
 - Omit `X(Component)` for ordinary components once the project has the compiler plugin configured — this is the default, not a fallback.
 - You still import `X` to access `X.useState` and the other xcomponent helpers.
 - You still need `X(Component)` when you want `.with(...)` composition on the exported component, or when the file is excluded from auto-wrapping (for example `*.stories.tsx`).
@@ -117,25 +132,33 @@ Creates component-scoped observable state.
 Supported forms:
 
 ```tsx
-const state = X.useState(() => class {
-  count = 0
-})
+const state = X.useState(
+  () =>
+    class {
+      count = 0;
+    },
+);
 
 const state = X.useState(() => ({
   count: 0,
   get doubled() {
-    return this.count * 2
+    return this.count * 2;
   },
-}))
+}));
 
-const state = X.useState(props, (props) => class {
-  get total() {
-    return props.a + props.b
-  }
-})
+const state = X.useState(
+  props,
+  (props) =>
+    class {
+      get total() {
+        return props.a + props.b;
+      }
+    },
+);
 ```
 
 Behavior:
+
 - If the returned store is not already observable, xcomponent applies `makeAutoObservable` automatically.
 - If the initializer returns a class constructor, xcomponent instantiates it once.
 - If you pass `props`, xcomponent mirrors prop updates into an observable object and preserves the store instance across rerenders.
@@ -149,6 +172,7 @@ Behavior:
 - `X.useReaction(dataFn, effectFn, opts?)` runs a MobX reaction inside a React effect.
 
 Important defaults for `X.useReaction`:
+
 - `fireImmediately` defaults to `true`
 - `equals` defaults to `comparer.structural`
 
@@ -163,8 +187,8 @@ That means a reaction will run on first render and compares structured values by
 Use for simple mutable values.
 
 ```tsx
-const count = new Value(0)
-count.set(count.value + 1)
+const count = new Value(0);
+count.set(count.value + 1);
 ```
 
 #### `Value.Bool`
@@ -172,10 +196,10 @@ count.set(count.value + 1)
 Use for booleans with convenience helpers.
 
 ```tsx
-const isOpen = new Value.Bool(false)
-isOpen.toggle()
-isOpen.setTrue()
-isOpen.setFalse()
+const isOpen = new Value.Bool(false);
+isOpen.toggle();
+isOpen.setTrue();
+isOpen.setFalse();
 ```
 
 #### `Value.Async<T, P>`
@@ -184,16 +208,17 @@ Use for async request state.
 
 ```tsx
 const users = new Value.Async(async ({ orgId }: { orgId: string }) => {
-  return fetchUsers(orgId)
-})
+  return fetchUsers(orgId);
+});
 
-await users.query({ orgId: 'acme' })
-users.value
-users.error
-users.isPending
+await users.query({ orgId: 'acme' });
+users.value;
+users.error;
+users.isPending;
 ```
 
 Key behavior:
+
 - `query(...)` clears the previous error, tracks pending work, sets `value` on success, and sets `error` on failure.
 - `query(...)` returns the `Value.Async` instance, so chaining like `await state.users.query(...); state.users.value` is normal.
 - `reset()` clears the current value and cancels queued promises when supported.
@@ -207,7 +232,7 @@ Use to expose an existing source of truth through a `value` getter and optional 
 const selectedId = new Value.Boxed(
   () => route.search.userId,
   (userId) => route.push((uri) => ({ search: { userId } })),
-)
+);
 ```
 
 This is useful when a child should consume a value-like object without owning the underlying state.
@@ -215,15 +240,15 @@ This is useful when a child should consume a value-like object without owning th
 For URI-backed input state, prefer `Value.Boxed` together with `xroute` so serialization and deserialization stay explicit.
 
 ```tsx
-import { Value } from '@n4s/xcomponent'
+import { Value } from '@n4s/xcomponent';
 
 class SomePageInputState {
   constructor(public ctx: () => SomePageState) {
-    makeAutoObservable(this)
+    makeAutoObservable(this);
   }
 
   private get route() {
-    return this.ctx().ctx().router.routes.somePage
+    return this.ctx().ctx().router.routes.somePage;
   }
 
   someDate = new Value.Boxed(
@@ -232,7 +257,7 @@ class SomePageInputState {
       this.route.push({
         search: { someDate: someDate.format('YYYY-MM-DD') },
       }),
-  )
+  );
 }
 ```
 
@@ -243,29 +268,33 @@ class SomePageInputState {
 Build-time auto-wrap mode (strongly preferred):
 
 ```tsx
-import { X, Value } from '@n4s/xcomponent'
+import { X, Value } from '@n4s/xcomponent';
 
 export const UserName = (props: { name: string }) => {
-  const state = X.useState(props, (props) => class {
-    prefix = new Value('User:')
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        prefix = new Value('User:');
 
-    get label() {
-      return `${this.prefix.value} ${props.name}`
-    }
-  })
+        get label() {
+          return `${this.prefix.value} ${props.name}`;
+        }
+      },
+  );
 
-  return <span>{state.label}</span>
-}
+  return <span>{state.label}</span>;
+};
 ```
 
 Manual wrap mode (edge cases only — files excluded from the compiler plugin such as `*.stories.tsx`, or projects without the plugin configured):
 
 ```tsx
-import { X } from '@n4s/xcomponent'
+import { X } from '@n4s/xcomponent';
 
 export const UserName = X(({ name }: { name: string }) => {
-  return <span>{name}</span>
-})
+  return <span>{name}</span>;
+});
 ```
 
 Default to plain function components under auto-wrap. Reach for `X(...)` manual wrapping only when the plugin genuinely does not apply to that file.
@@ -273,18 +302,21 @@ Default to plain function components under auto-wrap. Reach for `X(...)` manual 
 ### 2. Local class-based state
 
 ```tsx
-import { X, Value } from '@n4s/xcomponent'
+import { X, Value } from '@n4s/xcomponent';
 
 export const Counter = () => {
-  const state = X.useState(() => class {
-    count = new Value(0)
+  const state = X.useState(
+    () =>
+      class {
+        count = new Value(0);
 
-    get doubled() {
-      return this.count.value * 2
-    }
+        get doubled() {
+          return this.count.value * 2;
+        }
 
-    increment = () => this.count.set(this.count.value + 1)
-  })
+        increment = () => this.count.set(this.count.value + 1);
+      },
+  );
 
   return (
     <>
@@ -292,32 +324,70 @@ export const Counter = () => {
       <div>{state.doubled}</div>
       <button onClick={state.increment}>+</button>
     </>
-  )
-}
+  );
+};
 ```
 
 Use this as the default pattern for local state. This component relies on build-time auto-wrap; add `X(...)` around it only for the edge cases described above.
 
 Conventional class-state rules:
+
 - Prefer classes for local MobX state.
+- Keep all cohesive local state, derived values, and state-changing actions together in that one class instead of dispersing them across component callbacks.
 - Prefer arrow-function methods such as `increment = () => ...`.
 - Use private `#methods` for non-observable implementation details.
 - Prefer composition over inheritance.
+
+Keep the JSX boundary in the component. Event callbacks should remain inline so they can adapt browser events. For a simple assignment, update the `Value` directly; reserve class actions for meaningful domain operations that coordinate state. Keep React element construction and collection mapping in JSX/render too.
+
+```tsx
+class SearchState {
+  query = new Value('');
+  selectedIds = new Set<string>();
+
+  toggleSelected = (id: string) => {
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else this.selectedIds.add(id);
+  };
+}
+
+export const Search = (props: {
+  users: Array<{ id: string; name: string }>;
+}) => {
+  const state = X.useState(() => new SearchState());
+
+  return (
+    <>
+      <input
+        value={state.query.value}
+        onChange={(event) => state.query.set(event.target.value)}
+      />
+      {props.users.map((user) => (
+        <button key={user.id} onClick={() => state.toggleSelected(user.id)}>
+          {user.name}
+        </button>
+      ))}
+    </>
+  );
+};
+```
+
+Do not introduce named `handleClick`/`handleChange` component callbacks merely to forward values to state. For a simple `Value` update, JSX should read the event and call `.set(...)` directly. The class should own meaningful operations such as `toggleSelected`, while JSX owns event adaptation and rendering.
 
 Functional style is also supported when it is a better fit:
 
 ```tsx
 const state = X.useState(() => {
-  const count = new Value(0)
+  const count = new Value(0);
 
   return {
     count,
     get doubled() {
-      return count.value * 2
+      return count.value * 2;
     },
     increment: () => count.set(count.value + 1),
-  }
-})
+  };
+});
 ```
 
 Use functional style only when it materially improves a very small local store. The team default is still class state.
@@ -325,39 +395,51 @@ Use functional style only when it materially improves a very small local store. 
 ### 3. Extract state into a custom hook
 
 ```tsx
-type Props = { someProp: number }
+const useMyComponentState = (props: { someProp: number }) => {
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        count = new Value(0);
 
-const useMyComponentState = (props: Props) => {
-  const state = X.useState(props, (props) => class {
-    props = props
-    count = new Value(0)
+        get combinedNumber() {
+          return this.count.value + props.someProp;
+        }
 
-    get combinedNumber() {
-      return this.count.value + this.props.someProp
-    }
+        increment = () => this.count.set(this.count.value + 1);
 
-    increment = () => this.count.set(this.count.value + 1)
-  })
+        useReactions = () => {
+          X.useReaction(
+            () => props.someProp,
+            () => {
+              console.log('prop changed', props.someProp);
+            },
+          );
+
+          X.useReaction(
+            () => this.count.value,
+            () => {
+              console.log('count changed', this.count.value);
+            },
+          );
+        };
+      },
+  );
+
+  state.useReactions();
 
   X.useOnMounted(() => {
-    console.log('mounted')
-  })
+    console.log('mounted');
+  });
 
-  X.useReaction(
-    () => state.props.someProp,
-    () => {
-      console.log('prop changed', state.props.someProp)
-    },
-  )
+  return state;
+};
 
-  return state
-}
+export const MyComponent = (props: { someProp: number }) => {
+  const state = useMyComponentState(props);
 
-export const MyComponent = (props: Props) => {
-  const state = useMyComponentState(props)
-
-  return <button onClick={state.increment}>{state.combinedNumber}</button>
-}
+  return <button onClick={state.increment}>{state.combinedNumber}</button>;
+};
 ```
 
 Use this pattern when you want Vue-like `setup()` separation without moving the state into a separate file yet.
@@ -365,53 +447,63 @@ Use this pattern when you want Vue-like `setup()` separation without moving the 
 ### 4. Observable props in local state
 
 ```tsx
-type Props = { initialCount: number; multiplier: number }
+export const Counter = (props: {
+  initialCount: number;
+  multiplier: number;
+}) => {
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        count = new Value(props.initialCount);
 
-export const Counter = (props: Props) => {
-  const state = X.useState(props, (props) => class {
-    count = new Value(props.initialCount)
+        get multiplied() {
+          return this.count.value * props.multiplier;
+        }
 
-    get multiplied() {
-      return this.count.value * props.multiplier
-    }
+        increment = () => this.count.set(this.count.value + 1);
+      },
+  );
 
-    increment = () => this.count.set(this.count.value + 1)
-  })
-
-  return (
-    <button onClick={state.increment}>
-      {state.multiplied}
-    </button>
-  )
-}
+  return <button onClick={state.increment}>{state.multiplied}</button>;
+};
 ```
 
 Rules:
+
 - Read the reactive props inside computed getters, reactions, or render.
 - Prefer the `props` closure passed to `X.useState(props, ...)` for derived state.
-- If you want the prop object available on the instance, store it as `props = props` and access `this.props.someField`.
+- Do not store `props = props` on the local state instance when the initializer closure is sufficient. Keep props on the state instance only when another API genuinely needs the state object to expose them.
+- The outer component `props` are not observable to MobX. Inside the initializer and its `useReactions()` method, use the inner reactive `props` closure directly. Add a getter only for actual derivation, not to forward a prop unchanged.
 
 ### 5. Async data in component state
 
 ```tsx
 export const UserList = (props: { orgId: string }) => {
-  const state = X.useState(props, (props) => class {
-    props = props
-    users = new Value.Async(async () => fetchUsers(props.orgId))
-  })
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        users = new Value.Async(async () => fetchUsers(props.orgId));
 
-  X.useReaction(
-    () => state.props.orgId,
-    () => {
-      state.users.query()
-    },
-  )
+        useReactions = () => {
+          X.useReaction(
+            () => props.orgId,
+            () => {
+              this.users.query();
+            },
+          );
+        };
+      },
+  );
 
-  if (state.users.isPending) return <div>Loading...</div>
-  if (state.users.error) return <div>{state.users.error.message}</div>
+  state.useReactions();
 
-  return <div>{state.users.value?.length ?? 0}</div>
-}
+  if (state.users.isPending) return <div>Loading...</div>;
+  if (state.users.error) return <div>{state.users.error.message}</div>;
+
+  return <div>{state.users.value?.length ?? 0}</div>;
+};
 ```
 
 For async work that depends on changing props or state, combine `Value.Async` with `X.useReaction` and make sure the query function reads reactive sources.
@@ -420,30 +512,39 @@ For async work that depends on changing props or state, combine `Value.Async` wi
 
 ```tsx
 export const Example = (props: { filter: string }) => {
-  const state = X.useState(props, (props) => class {
-    props = props
-    value = new Value('')
-  })
+  const state = X.useState(
+    props,
+    (props) =>
+      class {
+        value = new Value('');
 
-  X.useReaction(
-    () => state.props.filter,
-    () => {
-      state.value.set('')
-    },
-  )
+        useReactions = () => {
+          X.useReaction(
+            () => props.filter,
+            () => {
+              this.value.set('');
+            },
+          );
+        };
+      },
+  );
+
+  state.useReactions();
 
   X.useAutorun(() => {
-    console.log(state.value.value)
-  })
+    console.log(state.value.value);
+  });
 
-  return <input value={state.value.value} />
-}
+  return <input value={state.value.value} />;
+};
 ```
 
 Treat these like React hooks:
+
 - Call them at component or custom-hook top level
 - Do not call them conditionally
-- Do not bury them inside class methods or constructors
+- A local state class may group `X.useReaction` calls in one method named `useReactions()`. Call `state.useReactions()` exactly once and unconditionally at the component or custom-hook top level.
+- Do not call `X.useReaction` from constructors, ordinary action methods, callbacks, or any other state method.
 - Make sure their tracking functions read MobX observables, not plain destructured React values
 
 ### 7. Separate state from view
@@ -452,18 +553,18 @@ Treat these like React hooks:
 export class UserCardState {
   constructor(public props: { name: string }) {}
 
-  expanded = new Value.Bool(false)
+  expanded = new Value.Bool(false);
 
   get title() {
-    return this.props.name
+    return this.props.name;
   }
 }
 
 export const UserCard = (props: { name: string }) => {
-  const state = X.useState(props, (props) => new UserCardState(props))
+  const state = X.useState(props, (props) => new UserCardState(props));
 
-  return <button onClick={state.expanded.toggle}>{state.title}</button>
-}
+  return <button onClick={state.expanded.toggle}>{state.title}</button>;
+};
 ```
 
 Use this when the view is simple but the local state needs its own file — for example once the component file grows too large, or once a child component needs to import the state's type directly.
@@ -476,20 +577,20 @@ If the extracted state is a class defined outside `X.useState`, add `makeAutoObs
 
 ```tsx
 const Dialog = X(({ children }: { children: React.ReactNode }) => {
-  return <div className={Dialog.classes.root}>{children}</div>
+  return <div className={Dialog.classes.root}>{children}</div>;
 }).with({
   Header: X(({ children }: { children: React.ReactNode }) => {
-    return <header className={Dialog.classes.header}>{children}</header>
+    return <header className={Dialog.classes.header}>{children}</header>;
   }),
   Body: X(({ children }: { children: React.ReactNode }) => {
-    return <section className={Dialog.classes.body}>{children}</section>
+    return <section className={Dialog.classes.body}>{children}</section>;
   }),
   classes: {
     root: 'dialog-root',
     header: 'dialog-header',
     body: 'dialog-body',
   },
-})
+});
 ```
 
 Use this for component families like `Dialog.Header`, `Dialog.Body`, `Table.Row`, or `Form.Field`.
@@ -499,17 +600,17 @@ Use this for component families like `Dialog.Header`, `Dialog.Body`, `Table.Row`
 `X.useState` auto-observes local component state, but global or shared stores outside React should still be normal MobX stores.
 
 ```tsx
-import { makeAutoObservable } from 'mobx'
+import { makeAutoObservable } from 'mobx';
 
 export class UserState {
   constructor() {
-    makeAutoObservable(this)
+    makeAutoObservable(this);
   }
 
-  selectedId = new Value<string | undefined>(undefined)
+  selectedId = new Value<string | undefined>(undefined);
 
   get hasSelection() {
-    return !!this.selectedId.value
+    return !!this.selectedId.value;
   }
 }
 ```
@@ -518,22 +619,23 @@ For global state, prefer a hierarchy of discrete classes that each do one thing 
 
 ```tsx
 interface RootState {
-  routing: XRouter
-  app: AppState
-  admin: AdminState
+  routing: XRouter;
+  app: AppState;
+  admin: AdminState;
 }
 
 interface AppState {
-  api: ApiState
-  auth: AuthState
+  api: ApiState;
+  auth: AuthState;
   pages: {
-    overview: AppOverviewState
-    editor: AppEditorState
-  }
+    overview: AppOverviewState;
+    editor: AppEditorState;
+  };
 }
 ```
 
 Global-state rules:
+
 - Name classes `SomethingState`.
 - Store them in `.ts` files near the feature they belong to.
 - Access them from components through React context.
@@ -546,35 +648,35 @@ For composed state classes, prefer `ctx` dependency injection over inheritance o
 ```tsx
 class AuthState {
   constructor(public ctx: () => ApiState) {
-    makeAutoObservable(this)
+    makeAutoObservable(this);
   }
 
   login = () => {
-    this.ctx().loginQuery()
-  }
+    this.ctx().loginQuery();
+  };
 
   get authToken() {
-    return this.ctx().loginQuery.value?.token
+    return this.ctx().loginQuery.value?.token;
   }
 }
 
 class ApiState {
   constructor(public ctx: () => AuthState) {
-    makeAutoObservable(this)
+    makeAutoObservable(this);
   }
 
   loginQuery = new Value.Async(async () => {
-    return this.fetch()
-  })
+    return this.fetch();
+  });
 
   fetch = () => {
     // request logic
-  }
+  };
 }
 
 class RootState {
-  api = new ApiState(() => this.auth)
-  auth = new AuthState(() => this.api)
+  api = new ApiState(() => this.auth);
+  auth = new AuthState(() => this.api);
 }
 ```
 
@@ -583,12 +685,14 @@ Provide the minimal dependencies to `ctx` where practical. Passing top-level sta
 ### 10. React hooks to replace versus keep
 
 Usually replaced by xcomponent patterns:
+
 - `useState`
 - `useReducer`
 - `useMemo`
 - `useCallback`
 
 Usually still valid when needed:
+
 - `useEffect`, but prefer `X.useOnMounted`, `X.useOnUnmounted`, `X.useReaction`, or `X.useAutorun` for observable-driven lifecycles
 - `useLayoutEffect`
 - `useRef`
@@ -602,29 +706,29 @@ For generic/atomic components (inputs, dialogs, and similar reusable primitives)
 ```tsx
 class GenericInputState {
   constructor(public props: { initialValue: string }) {
-    makeAutoObservable(this)
+    makeAutoObservable(this);
   }
 
-  value = new Value(this.props.initialValue)
+  value = new Value(this.props.initialValue);
 }
 
 export const GenericInput = (props: {
-  initialValue: string
-  onInit?: (state: GenericInputState) => void
+  initialValue: string;
+  onInit?: (state: GenericInputState) => void;
 }) => {
-  const state = X.useState(props, (props) => new GenericInputState(props))
+  const state = X.useState(props, (props) => new GenericInputState(props));
 
   X.useOnMounted(() => {
-    props.onInit?.(state)
-  })
+    props.onInit?.(state);
+  });
 
   return (
     <input
       value={state.value.value}
       onChange={(e) => state.value.set(e.target.value)}
     />
-  )
-}
+  );
+};
 ```
 
 Use this only for components meant to be generic/reusable; for feature-specific components, prefer §7's separated state file so the parent can just import the state class directly.
@@ -644,6 +748,7 @@ When implementing a new component with xcomponent:
 9. If state logic starts crowding the view, extract it into a custom hook or separate state file.
 10. Put mount, unmount, autorun, and reaction logic at the component or custom-hook top level.
 11. If the component has related subcomponents or static class maps, attach them with `.with()`.
+12. Keep cohesive local state and actions in the class; keep inline JSX callbacks for event adaptation and JSX for element construction/mapping.
 
 When refactoring existing React or MobX code:
 
@@ -666,19 +771,24 @@ When refactoring existing React or MobX code:
 - `X.useReaction` and `X.useAutorun` must observe MobX state. A plain React prop or local variable is not reactive unless it is read through an observable object or value wrapper.
 - If a `Value.Async` query depends on props, read those props from the reactive object or pass them as query payload. Do not accidentally close over first-render values.
 - Build-time auto-wrap only replaces the component-level observer wrapper. It does not replace `X.useState`, lifecycle helpers, or `.with(...)` composition.
-- The `mobx-react-observer` Vite plugin's `exclude` option commonly excludes certain file patterns (for example `*.stories.tsx`); for files outside its scope, wrap manually with `X(...)`.
-- If your project does not actually auto-wrap components (`mobx-react-observer` not configured), a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
+- The `vite-plugin-observing-components` Vite plugin's `exclude` option commonly excludes certain file patterns (for example `*.stories.tsx`); for files outside its scope, wrap manually with `X(...)`.
+- If your project does not actually auto-wrap components (`vite-plugin-observing-components` not configured), a bare function component that reads MobX state will not rerender correctly. In that case, use `X(...)`.
 - When classes depend on each other cyclically during construction, defer constructor-time work until the next tick so object references exist before use.
 - `X.useOnUnmounted` is the right place for interval, timeout, subscription, and manual cleanup logic.
 - `X` sets a display name for debugging when one is not already present.
 - `Value.Async`, `Value.Boxed`, and `Value.Bool` work as both constructors and type annotations (a type-only namespace is merged with the `Value` class for this). `Value['Boxed']<T>` bracket-indexed syntax still does not work either way — use the dotted form `Value.Boxed<T>`, or the standalone `BoxedValue<T>`.
 - Avoid non-trivial derived computation (`.filter()`, `.map()` chains, etc.) inline in JSX, even if it looks like "just one line" — move it to a computed getter on state so it is memoized and named.
+- Keep data derivation in computed state getters, but keep the final `.map()` that creates React elements in JSX. State classes model data and actions; JSX maps that data to React nodes.
+- Keep event callbacks inline in JSX when they only extract a value from an event or close over a rendered item. Update a simple `Value` directly; use a state action only when the operation has domain meaning or coordinates multiple state changes.
 - A whole local state instance can be passed down to a child component as a prop when useful, not just its individual `Value`/`Value.Boxed`/`Value.Async` fields.
 
 ## What Good Usage Usually Looks Like
 
 - One `X.useState` store per component concern, not one per field
 - Class-based state as the default MobX style
+- Cohesive local state, derivation, and actions housed together in the local state class
+- Inline JSX callbacks used as view adapters that directly update simple `Value`s or invoke meaningful state actions
+- React nodes and final list-to-element mapping kept in JSX, not state classes
 - Computed getters for derived data
 - `Value` and `Value.Bool` for simple mutable state
 - `Value.Async` for async state machines
