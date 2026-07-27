@@ -3,7 +3,6 @@
   "version": "7.0.0",
   "private": false,
   "type": "module",
-  "packageManager": "pnpm@10.3.0",
   "scripts": {
     "dev": "ladle dev",
     "build": "vp run build:clean && vp run build:cjs && vp run build:mjs",
@@ -14,7 +13,7 @@
     "build:watch": "vp run build:clean && vp run '/(cjs|mjs):watch$/'",
     "build:clean": "rm -rf ./x/*",
     "test": "vp test",
-    "test:package": "pnpm run build && test ! -d x/cjs/__tests__ && test ! -d x/cjs/src && test ! -d x/mjs/__tests__ && test ! -d x/mjs/src && node --input-type=module -e \"import('@n4s/xcomponent')\" && node -e \"require('@n4s/xcomponent')\" && npm pack --dry-run"
+    "test:package": "nub run build && test ! -d x/cjs/__tests__ && test ! -d x/cjs/src && test ! -d x/mjs/__tests__ && test ! -d x/mjs/src && node --input-type=module -e \"import('@n4s/xcomponent')\" && node -e \"require('@n4s/xcomponent')\" && npm pack --dry-run"
   },
   "main": "./x/cjs/index.js",
   "module": "./x/mjs/index.js",

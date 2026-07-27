@@ -91,7 +91,7 @@ export default defineConfig({
 
 Notable details:
 
-- `vite-plugin-observing-components` (`pnpm add -D vite-plugin-observing-components`) wraps every component export in `observer` from `mobx-react-lite`, the same implementation `X` wraps. This produces the same rendering behavior as `X(Component)`.
+- `vite-plugin-observing-components` (`nub add -D vite-plugin-observing-components`) wraps every component export in `observer` from `mobx-react-lite`, the same implementation `X` wraps. This produces the same rendering behavior as `X(Component)`.
 - It is a standalone Vite plugin, not a babel-preset addition — add it as its own entry in `plugins`, independent from `@vitejs/plugin-react`'s `babel` option. It works with any Vite version and either underlying transformer (SWC or Babel), so no babel config is required.
 - The predecessor `babel-plugin-observing-components`/`swc-plugin-observing-components` packages are deprecated; do not add new setups with them. Existing projects should migrate to `vite-plugin-observing-components`.
 - `*.stories.tsx` is typically excluded from wrapping (Storybook has trouble with the wrapped form) via the `exclude` option — see the Caveats section.

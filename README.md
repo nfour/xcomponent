@@ -22,7 +22,7 @@ A microframework that combines MobX and React to solve common performance, state
 ## Install
 
 ```bash
-pnpm add @n4s/xcomponent
+nub add @n4s/xcomponent
 ```
 
 ## Features
